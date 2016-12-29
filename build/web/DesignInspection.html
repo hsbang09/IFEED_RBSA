@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Satisfaction Summary</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="js/lib/jquery.js" type="text/javascript"></script>
+        <script src="js/lib/d3.js"></script>
+
+        <style>
+
+            
+            table {
+                border-collapse: collapse;
+            }
+
+            table, th, td {
+                border: 1px solid black;
+            }
+            
+            #tooltip {              
+                width: 60px;                  
+                height: 28px;                   
+                padding: 2px;             
+                font: 12px sans-serif;        
+                /*background: lightsteelblue;*/   
+                border: 0px;      
+                /*border-radius: 8px;*/              
+            }
+            
+
+
+            #ruleFigure {
+
+                font-family: tahoma;
+                font-size: 12px;
+                color: black;
+                border: 1px teal solid;
+                height: 225px;
+                width: 800px;
+                overflow: scroll;
+                float: left;
+                margin-left: 5px;
+            }
+
+            #send {
+                width: 50px;
+                height: 22px;
+                margin-left: 2.5px;
+            }
+
+            #requestedFactID {
+            }
+            
+            
+            #factName {
+                border: 1px solid;
+            }
+            #factHistoryFigure {
+                border: 1px black double;
+                width: 1253px;
+                height: 550px;
+                float: left;
+                margin-top: 8px;
+                margin-left: 2px;
+                overflow: hidden;
+            }
+            .node rect {
+                cursor: pointer;
+                /*fill: #fff;*/
+            }
+
+            .node text {
+                font: 15px sans-serif;
+                pointer-events: none;
+            }
+            path.link {
+                fill: none;
+                stroke: #FAA93F;
+                stroke-width: 2px;
+            }
+            path.arrow {
+                fill: none;
+                stroke: #FAA93F;
+                stroke-width: 2px;
+            }
+/*            .svg-tooltip {
+                pointer-events: none;
+            }*/
+/*            .tooltip {
+                padding: 10px;
+                color: #4A22FF;
+            }*/
+            .lead {
+                font-style: italic;
+            }
+            p {
+                margin: 5px 0px;
+            }
+            
+            .toggle-button { background-color: white; margin-top: 3px; border-radius: 20px; border: 2px solid #232323; height: 18px; cursor: pointer; width: 43px; position: absolute; display: inline-block; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; }
+            .toggle-button button { cursor: pointer; outline: 0; display:block; position: absolute; left: 1px; top: 2px; border-radius: 100%; width: 18px; height: 20px; background-color: white; float: left; margin: -3px 0 0 -3px; border: 2px solid #232323; transition: left 0.3s; }
+            .toggle-button-selected { background-color: #83B152; border: 2px solid #232323; }
+            .toggle-button-selected button { left: 26px; top: 0; margin: 0; border: 2px solid #232323; width: 18px; height: 20px; box-shadow: 0 0 4px rgba(0,0,0,0.1); }
+        
+            #optionPanel{
+                background-color: #E4E4E4;
+                width: 1256px;
+                height: 60px;
+                border: 1px solid black;
+            }
+            
+            #dropdown_slots{
+                margin-top: 4.5px;
+                width: 200px;
+            }
+            
+            
+            #inspectionMode_panel{
+                float:left;
+                width: 130px;
+                height:50px;
+                margin-left: 5px;
+                margin-right: 3px;
+                margin-top: 5px;
+            }
+            #slotName_panel{
+                width: 200px;
+                height:50px;
+                float:left;
+                margin-left: 2px;
+                margin-right: 3px;
+                margin-top: 5px;
+            }
+            #slotValue_panel{
+                width: 200px;
+                height:50px;
+                float:left;
+                margin-left: 10px;
+                margin-right: 3px;
+                margin-top: 5px;
+            }
+            #slotValue_textDisplay{
+                float:left;
+                border: 1px solid black;
+                width: 270px;
+                height: 19px;
+                margin-top: 4.5px;
+                margin-right: 3px;
+                background-color: #FFFFFF;
+            }
+
+        </style>
+        
+    </head>
+    <body>
+        
+        
+<h2 style="margin:auto;">Design Inspection</h2>  
+
+<div id="status_display_panel" style="width:100%; margin:10px 0px">
+    <div id="status_display_box" style="font-family: tahoma;font-size: 12px;color: black;
+                    border: 1px black solid;height: 35px;width: 70%; margin:auto;">
+    </div>
+</div>
+<div id="upper_panel" style="width:100%; height:800px;">
+    <div style="width:1260px;height:100%; margin:auto">
+        <div id="satisfaction_score_summary_div" style="float: left; border: 1px black double; width: 550px; height:800px; overflow:scroll;">
+        </div>
+        <div id="attribute_score_summary_box" style="float: left; border: 1px black double; width: 700px; height: 800px; overflow: scroll; margin-left:5px;">
+
+        </div>
+    </div>
+</div>
+
+
+
+<div id="option_panel" style="width:100%">
+        <div> 
+            
+            <div id="inspectionMode_panel">
+                Inspection Mode <br/> &nbsp;&nbsp;&nbsp;&nbsp;
+                <div class="toggle-button" id="inspectionMode_button">
+                    <button></button>
+                </div>
+            </div>
+            
+            <div id="slotName_panel">
+                Slot Name
+                <!--<form name="dropdown_slots_form" action="javascript:handleClick()" method="POST">-->
+                    <select id="dropdown_slots" name="dropdown_slots">
+                        <option value="not_selected">Select a fact</option>
+                    </select>
+<!--                </form>-->
+            </div>
+
+             <div id="slotValue_panel">
+                 Slot Value
+                 <div id="slotValue_textDisplay">
+                     
+                 </div>
+             </div>
+            
+        </div>
+</div>
+<div id="lower_panel" style="width:100%">
+    <figure id="factHistoryFigure"></figure>        
+</div>
+
+          
+          <script src="js/factHistoryFigure.js" type="text/javascript"></script>
+          <script src="js/attributeSummaryTable.js" type="text/javascript"></script>
+          <script src="js/satisfactionScoreSummary.js" type="text/javascript"></script>
+          
+        <script>
+
+
+var architectures = window.opener.architectures;
+var selected_arch_id = window.opener.selected_arch_id;
+var selected_arch = architectures.filter(function(d){
+                        if(d.id===selected_arch_id){
+                            return true;
+                        }
+                        return false;
+                    });
+
+
+
+// Satisfaction score summary tree
+
+var margin_satTable = {top: 15, right: 20, bottom: 30, left: 15},
+    width_satTable = 600 - margin_satTable.left - margin_satTable.right,
+    barHeight_satTable = 20,
+    barWidth_satTable = 480;
+
+var i_satTable = 0,
+    duration_satTable = 400,
+    root_satTable;
+
+var tree_satTable = d3.layout.tree()
+            .nodeSize([0, 20]);
+
+d3.select('#satisfaction_score_summary_div').append("svg")
+                        .attr('id','satisfaction_score_summary_svg')
+                        .attr("width", width_satTable + margin_satTable.left + margin_satTable.right)
+                        .style('margin-top',margin_satTable.top)
+                        .style('margin-left',margin_satTable.left)
+                        .append("g")
+                        .attr("transform", "translate(" + margin_satTable.left + "," + margin_satTable.top + ")");
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
+
+            var margin_factHis = {top: 15, right: 10, bottom: 0, left: 10};
+            var width_factHis = 1250 - margin_factHis.left - margin_factHis.right;        
+            var height_factHis = 550 - margin_factHis.bottom - margin_factHis.top;
+            var ruleVisualizerRectSize = {width:600, height:550};
+            var jsonObj_factHis;
+            var tree_factHis = d3.layout.tree()
+                            .nodeSize([0, 20]);
+            var i_factHis = 0,
+                duration_factHis = 3,
+                duration_fast = 50,
+                duration_slow = 100,
+                root_factHis;
+        
+            var mouseXLoc_tmp=0,
+                mouseYLoc_tmp=0;
+        
+            var linkArrowLoc = [[]];
+            var linkArrows;
+        
+            var barHeight_factHis = 25,
+                barWidth_rule = 45,
+                barWidth_fact = 80;
+            
+            var factArray = [];  // array of all the fact IDs
+            var factArrayLoc = [[]];  // store the location of each fact
+            var ruleArray = [[]]; //  array of all the rule IDs
+            var factTypeArray = [];
+            var factTypeCountArray=[];
+            
+            var node_factHis,
+                nodes_factHis,
+                nodeEnter_factHis;
+                
+        
+            var link,
+                linkEnter,
+                diagonal;
+
+            var fr_dist = 30;  // distance between a fact and a rule in y direction 
+            var ff_dist = 150; // distance between a fact and another fact in y direction
+            var expandableFacts = [];
+            var expandableFactsLoc = [[]];
+           
+            var color_factHis = d3.scale.category10();
+            var tooltip;
+            
+            var dragStart_x=0;
+            var dragStart_y=0;
+            var newX;
+            var newY;
+            var nth_f_drag;
+            
+            var current_scale_factHis=1;
+
+            var highlightedFactID = 0;
+            var fix_rule_visualizer = null;
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////     
+
+            function booleanArray2String(bitString) {
+                var bitString_string = "";
+                for (var i = 0; i < bitString.length; i++) {
+                    var bool;
+                    if (bitString[i] == true) {
+                        bool = "1";
+                    } else {
+                        bool = "0";
+                    }
+                    bitString_string = bitString_string + bool;
+                }
+                return bitString_string;
+            }
+            function string2BooleanArray(bitString_string) {
+                var bitString = [];
+                bitString.length = 0;
+                for (var i = 0; i < bitString_string.length; i++) {
+                    if (bitString_string.charAt(i) == "0") {
+                        bitString.push(true);
+                    } else {
+                        bitString.push(false);
+                    }
+                }
+                return bitString;
+            }
+            
+            
+            var satScoreObj = satisfaction_score_summary_request(selected_arch);
+            init_satisfaction_summary_tree(satScoreObj);
+            var nSats = 1;
+            
+            
+            
+//
+//            function getFactIDFromSubobj(subobjName,archNum){
+//                var factID;
+//                var subobjAJAX = $.ajax({
+//                    url : "jessCommandServlet",
+//                    type: "POST",
+//                    async: false,
+//                    data : {"ID":"getFactIDFromSubobj","subobj":subobjName,"archNum":archNum},
+//                    success:function(data, textStatus, jqXHR) 
+//                    {
+//                        factID = data;  
+//                    },
+//                    complete: function(){
+//                        return factID;
+//                    },
+//                    error: function(jqXHR, textStatus, errorThrown) 
+//                    {
+//                        alert("Error - function get rule Json Obj");
+//                    }
+//                });
+//                return subobjAJAX.responseText;
+//            }
+
+            
+
+
+        </script>
+        
+    </body>
+</html>
