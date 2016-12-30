@@ -16,31 +16,31 @@ import jess.Fact;
 import jess.Rete;
 import rbsa.eoss.local.Params;
 
-public class factHistoryAnalyzer {
+public class FactHistoryAnalyzer extends JessExpressionAnalyzer{
     
     private Fact FactInQuestion;
     private String targetSlot;
-    private ruleAnalyzer ra;
+    private JessRuleAnalyzer ra;
     private ActionAnalyzer aa = new ActionAnalyzer();
     private Rete r;
     private QueryBuilder qb;
     private String factHistory;
     private String relevantRule;
     
-    public factHistoryAnalyzer(){
+    public FactHistoryAnalyzer(){
     }
-    public factHistoryAnalyzer(Rete r, QueryBuilder qb){
+    public FactHistoryAnalyzer(Rete r, QueryBuilder qb){
         this.r =r;
         this.qb=qb;
     }
-    public factHistoryAnalyzer(Fact inputFact, Rete r, QueryBuilder qb){
+    public FactHistoryAnalyzer(Fact inputFact, Rete r, QueryBuilder qb){
         this.r =r;
         this.qb=qb;
         this.FactInQuestion = inputFact;
         
         initializeFactHistory();
     }
-    public factHistoryAnalyzer(Fact inputFact, String slotName, Rete r, QueryBuilder qb){
+    public FactHistoryAnalyzer(Fact inputFact, String slotName, Rete r, QueryBuilder qb){
         this.r =r;
         this.qb=qb;
         this.FactInQuestion = inputFact;
@@ -94,7 +94,7 @@ public class factHistoryAnalyzer {
         try {
             
             Defrule relRule = Params.rules_defrule_map.get(relRuleName);
-            ruleAnalyzer ra = new ruleAnalyzer(relRule,r,qb);
+            JessRuleAnalyzer ra = new JessRuleAnalyzer(relRule,r,qb);
             int ruleID = Params.rules_NametoID_Map.get(relRuleName);
             
             if (!ra.checkInheritance(slotName)){
@@ -172,7 +172,7 @@ public class factHistoryAnalyzer {
         try {
             
             Defrule relRule = Params.rules_defrule_map.get(knownRuleName);
-            ruleAnalyzer ra = new ruleAnalyzer(relRule,r,qb);
+            JessRuleAnalyzer ra = new JessRuleAnalyzer(relRule,r,qb);
             int ruleID = Params.rules_NametoID_Map.get(knownRuleName);
             
             ActionAnalyzer aa = ra.getActionAnalyzer();
@@ -239,7 +239,7 @@ public class factHistoryAnalyzer {
             String restOfHistory = historySplit[1].trim();
             String targetRuleName = Params.rules_IDtoName_map.get(targetRuleNumber);
             Defrule targetRule = Params.rules_defrule_map.get(targetRuleName);
-            ruleAnalyzer tempRA = new ruleAnalyzer(targetRule,r,qb);    
+            JessRuleAnalyzer tempRA = new JessRuleAnalyzer(targetRule,r,qb);    
             if(tempRA.checkModificationOnSlot(slotName)){
                 ra = tempRA;
                 return targetRuleName;
@@ -260,7 +260,7 @@ public class factHistoryAnalyzer {
             String restOfHistory = historySplit[1].trim();
             String targetRuleName = Params.rules_IDtoName_map.get(targetRuleNumber);
             Defrule targetRule = Params.rules_defrule_map.get(targetRuleName);
-            ruleAnalyzer tempRA = new ruleAnalyzer(targetRule,r,qb);    
+            JessRuleAnalyzer tempRA = new JessRuleAnalyzer(targetRule,r,qb);    
             if(tempRA.checkModificationOnSlot(slotName)){
                 ra = tempRA;
                 return targetRuleName;
@@ -338,7 +338,7 @@ public class factHistoryAnalyzer {
     public String getTargetSlot(){
         return targetSlot;
     }
-    public ruleAnalyzer getRuleAnalyzer(){
+    public JessRuleAnalyzer getRuleAnalyzer(){
         return ra;
     }
     public String getFactHistory(){

@@ -15,7 +15,7 @@ import jess.Fact;
 import jess.Rete;
 
 
-public class ruleAnalyzer {
+public class JessRuleAnalyzer extends JessExpressionAnalyzer{
     private Rete r;
     private QueryBuilder qb;
     private Defrule targetRule;
@@ -31,9 +31,9 @@ public class ruleAnalyzer {
     private ActionAnalyzer aa;
     
     
-    public ruleAnalyzer(){
+    public JessRuleAnalyzer(){
     }
-    public ruleAnalyzer(Defrule inputRule,Rete r, QueryBuilder qb){
+    public JessRuleAnalyzer(Defrule inputRule,Rete r, QueryBuilder qb){
         this.r = r;
         this.qb = qb;
         this.targetRule = inputRule;

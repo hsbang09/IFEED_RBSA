@@ -15,7 +15,10 @@ import java.util.HashMap;
 import jess.Defrule;
 import jess.Rete;
 
-public class ActionAnalyzer {
+
+
+
+public class ActionAnalyzer extends JessExpressionAnalyzer{
     
     private Defrule targetRule;
     private ArrayList<String> intermediateActions;  // does not include the final action
@@ -153,133 +156,7 @@ public class ActionAnalyzer {
         return finalAction;
     }
     
-    public String getInsideParen(String inputString,int nth ,int level){
-        
-        if (checkParen(inputString) == false) return inputString; 
-        int[] loc = locateParen(inputString, nth);
-        String insideParen = inputString.substring(loc[0]+1, loc[1]);
-        if (level == 1){
-            return insideParen;
-        } else {
-            return getInsideParen(insideParen,1 ,level-1);
-        }
-    }
-    public String getInsideParen(String inputString,int level){
-        
-        if (checkParen(inputString) == false) return inputString; 
-        int[] loc = locateParen(inputString, 1);
-        String insideParen = inputString.substring(loc[0]+1, loc[1]);
-        if (level == 1){
-            return insideParen;
-        } else {
-            return getInsideParen(insideParen,level-1);
-        }
-    }
-    public int getNestedParenLevel(String inputString){
-        int leng = inputString.length();
-        int cnt = 0;
-        int level = 0;
-        int maxLevel = 0;
-        
-        for (int i = 0;i<leng;i++){
-            if(inputString.charAt(i) == '('){
-                level++;
-                if (level > maxLevel) maxLevel = level;
-            }
-            if(inputString.charAt(i) == ')' ){
-                level--;
-            }
-        }
-        return maxLevel;
-    }
-    
-    public int getNumOfSlots(String inputString){
-        int leng = inputString.length();
-        int cnt = 0;
-        int level = 0;
-        
-        for (int i = 0;i<leng;i++){
-            if(inputString.charAt(i) == '('){
-                level++;
-                if (level == 1) cnt++;
-            }
-            if(inputString.charAt(i) == ')' ){
-                level--;
-            }
-        }
-        return cnt;
-    }
-    
-    public boolean checkParen(String inputString){
-        int leng = inputString.length();
-        for (int i = 0;i<leng;i++){
-            if(inputString.charAt(i) == '(') return true;
-        }
-        return false;
-    }
-   
-    public int[] locateParen(String inputString,int index){ // locate (index)th parentheses
-        
-        int level = 0;
-        int nth = 0;
-        int leng = inputString.length();
-        int[] parenLoc = new int[2];
-        parenLoc[0] = 0;
-        parenLoc[1] = 0;
 
-        for (int i = 0; i<leng ;i++){
-            if(inputString.charAt(i) == '('){
-                level++;
-                if (level == 1) nth++;
-                if ((nth == index) && (level == 1))  parenLoc[0] = i;
-            }
-            if(inputString.charAt(i) == ')' ){
-                level--;
-            }
-            if((level == 0) && (nth == index)) {
-                parenLoc[1] = i;
-                break;
-            }
-        }
-        return parenLoc;
-    }
-    public ArrayList<Integer> locateNestedParen(String inputString,int focusLevel){ // locate all parentheses at specified level
-        
-        int level = 0;
-        int nth = 0;
-        int leng = inputString.length();
-        ArrayList<Integer> parenLoc = new ArrayList<>();
-
-        for (int i = 0; i<leng ;i++){
-            if(inputString.charAt(i) == '('){
-                level++;
-                if (level == focusLevel)  parenLoc.add(i);
-            }
-            if(inputString.charAt(i) == ')' ){
-                level--;
-                if (level == focusLevel) parenLoc.add(i);
-            }
-        }
-        return parenLoc;
-    }
-    
-    public String collapseAllParenIntoSymbol(String inputExpression){
-        
-        if (checkParen(inputExpression) == false) return inputExpression; 
-        int num = getNumOfSlots(inputExpression);
-        String expression = inputExpression;
-        
-        for (int i = 0;i<num;i++){
-            int[] loc = locateParen(expression,i+1);
-            String s1 = expression.substring(0, loc[0]+1);
-            String s2 = expression.substring(loc[1]);
-            String symbol = "";
-            for (int j = 0;j< loc[1]-loc[0]-1 ;j++) symbol = symbol.concat("X");
-            expression = s1 + symbol + s2;
-        }
-        return expression;
-    }
-    
     public void addFinalVariable(String inputVariable){
         if(!finalVariables.contains(inputVariable))
             finalVariables.add(inputVariable);
@@ -355,11 +232,8 @@ public class ActionAnalyzer {
         return slotName_VarMap;
     }
     
-    public boolean checkIF_THEN(String inputExpression){
-        String expression = getInsideParen(inputExpression,1);
-        expression = collapseAllParenIntoSymbol(expression);
-        return (expression.contains("if")) && (expression.contains("then"));
-    }
+
+    
     public ArrayList<String> separateIF_THEN(String inputExpression){
         String expression = getInsideParen(inputExpression,1);
         ArrayList<String> separatedExpression = new ArrayList<>();

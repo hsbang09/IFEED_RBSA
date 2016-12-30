@@ -91,15 +91,6 @@ function draw_attribute_summary_table(source){
             .append('td')      
             .text(function(d){   
                 return d.text;
-            })
-            .style("background-color",function(d){
-//                if (d.archNum == 1){
-//                    return "#FFFF61";
-//                } else if(d.archNum ==2){
-//                    return "#32FFE5";
-//                } else {
-//                    return "#000000";
-//                }
             });
                 
                 

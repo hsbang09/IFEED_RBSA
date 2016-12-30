@@ -255,63 +255,6 @@ d3.select('#satisfaction_score_summary_div').append("svg")
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
 
-            var margin_factHis = {top: 15, right: 10, bottom: 0, left: 10};
-            var width_factHis = 1250 - margin_factHis.left - margin_factHis.right;        
-            var height_factHis = 550 - margin_factHis.bottom - margin_factHis.top;
-            var ruleVisualizerRectSize = {width:600, height:550};
-            var jsonObj_factHis;
-            var tree_factHis = d3.layout.tree()
-                            .nodeSize([0, 20]);
-            var i_factHis = 0,
-                duration_factHis = 3,
-                duration_fast = 50,
-                duration_slow = 100,
-                root_factHis;
-        
-            var mouseXLoc_tmp=0,
-                mouseYLoc_tmp=0;
-        
-            var linkArrowLoc = [[]];
-            var linkArrows;
-        
-            var barHeight_factHis = 25,
-                barWidth_rule = 45,
-                barWidth_fact = 80;
-            
-            var factArray = [];  // array of all the fact IDs
-            var factArrayLoc = [[]];  // store the location of each fact
-            var ruleArray = [[]]; //  array of all the rule IDs
-            var factTypeArray = [];
-            var factTypeCountArray=[];
-            
-            var node_factHis,
-                nodes_factHis,
-                nodeEnter_factHis;
-                
-        
-            var link,
-                linkEnter,
-                diagonal;
-
-            var fr_dist = 30;  // distance between a fact and a rule in y direction 
-            var ff_dist = 150; // distance between a fact and another fact in y direction
-            var expandableFacts = [];
-            var expandableFactsLoc = [[]];
-           
-            var color_factHis = d3.scale.category10();
-            var tooltip;
-            
-            var dragStart_x=0;
-            var dragStart_y=0;
-            var newX;
-            var newY;
-            var nth_f_drag;
-            
-            var current_scale_factHis=1;
-
-            var highlightedFactID = 0;
-            var fix_rule_visualizer = null;
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////     
 
             function booleanArray2String(bitString) {

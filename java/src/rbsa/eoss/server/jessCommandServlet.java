@@ -25,13 +25,14 @@ import jess.Deftemplate;
 import jess.Fact;
 import jess.Rete;
 import jess.Value;
+import rbsa.eoss.JessExpressionAnalyzer;
 import rbsa.eoss.ActionAnalyzer;
 import rbsa.eoss.ConditionalElementAnalyzer;
 import rbsa.eoss.QueryBuilder;
 import rbsa.eoss.Result;
 import rbsa.eoss.ResultManager;
-import rbsa.eoss.factHistoryAnalyzer;
-import rbsa.eoss.ruleAnalyzer;
+import rbsa.eoss.FactHistoryAnalyzer;
+import rbsa.eoss.JessRuleAnalyzer;
 //import madkitdemo3.AgentEvaluationCounter;
 import rbsa.eoss.local.Params;
 
@@ -108,6 +109,78 @@ public class jessCommandServlet extends HttpServlet {
                 
         String outputString = "";
 
+        if (request.getParameter("ID").equalsIgnoreCase("factHistoryFigureRequest")){
+            
+            this.resu = resultsGUIServlet.getInstance().getResult();
+            
+            Rete r = this.resu.getRete();
+            QueryBuilder qb = this.resu.getQueryBuilder();
+            
+            String subobj = request.getParameter("subobj");
+            String factID_String = request.getParameter("factID");
+            
+            System.out.println("subobj: " + subobj + ", factID: " + factID_String);
+            ArrayList<Fact> facts_test = qb.makeQuery("AGGREGATION::SUBOBJECTIVE");
+            System.out.println("num of agg facts: " + facts_test.size());
+            
+            String factHistory = "";
+            String factName = "";
+            String jsonObj = "";
+            try{
+                Fact f;
+                int factID;
+                
+                if(!subobj.isEmpty()){
+                    ArrayList<Fact> facts = qb.makeQuery("AGGREGATION::SUBOBJECTIVE (id "+ subobj +")");
+                    double max_sat = -1;
+                    f = facts.get(0);
+                    for(int i=0;i<facts.size();i++){
+                        double temp = facts.get(i).getSlotValue("satisfaction").floatValue(r.getGlobalContext());
+                        if(temp >= max_sat){
+                            f = facts.get(i);
+                        }
+                    }
+                    factID = f.getFactId();
+                }else{
+                    factID = Integer.parseInt(factID_String);
+                    f = r.findFactByID(factID);
+                }
+
+                Fact RequestedFact = f;
+                factHistory = RequestedFact.getSlotValue("factHistory").stringValue(r.getGlobalContext());                
+                factName = RequestedFact.getName();
+                factAndRuleNode farn = new factAndRuleNode(factID,factHistory);
+                jsonObj = gson.toJson(farn);
+                
+            }catch(Exception e){
+                System.out.println(e.getMessage());
+            }
+            outputString = jsonObj;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         if (request.getParameter("ID").equalsIgnoreCase("getFactName")){
             String factName = "";
@@ -220,8 +293,8 @@ public class jessCommandServlet extends HttpServlet {
                 
                 Fact RequestedFact = resu.getRete().findFactByID(factID);
                 String factHistory = RequestedFact.getSlotValue("factHistory").stringValue(resu.getRete().getGlobalContext());
-                factHistoryAnalyzer fha = new factHistoryAnalyzer(RequestedFact, slotName, resu.getRete(), resu.getQueryBuilder());
-                ruleAnalyzer ra = new ruleAnalyzer(rule,resu.getRete(),resu.getQueryBuilder());
+                FactHistoryAnalyzer fha = new FactHistoryAnalyzer(RequestedFact, slotName, resu.getRete(), resu.getQueryBuilder());
+                JessRuleAnalyzer ra = new JessRuleAnalyzer(rule,resu.getRete(),resu.getQueryBuilder());
                 
                 
                 ArrayList<String> LHSFactIDs = fha.getLHSFacts(ruleID);
@@ -259,7 +332,7 @@ public class jessCommandServlet extends HttpServlet {
                 Fact RequestedFact = resu.getRete().findFactByID(factID);
                 String factHistory = RequestedFact.getSlotValue("factHistory").stringValue(resu.getRete().getGlobalContext());
 
-                factHistoryAnalyzer fha = new factHistoryAnalyzer(RequestedFact, slotName, resu.getRete(), resu.getQueryBuilder());
+                FactHistoryAnalyzer fha = new FactHistoryAnalyzer(RequestedFact, slotName, resu.getRete(), resu.getQueryBuilder());
                 String relRuleName = fha.findRelevantRule(slotName);
                 int ruleID = Params.rules_NametoID_Map.get(relRuleName);
               
@@ -286,7 +359,7 @@ public class jessCommandServlet extends HttpServlet {
                 Defrule thisRule = Params.rules_defrule_map.get(ruleName);
                 String ruleDoc = thisRule.getDocstring();
                 
-                ruleAnalyzer ra = new ruleAnalyzer(thisRule,r,qb);
+                JessRuleAnalyzer ra = new JessRuleAnalyzer(thisRule,r,qb);
                 ActionAnalyzer aa = ra.getActionAnalyzer();
                 ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
         
@@ -423,43 +496,7 @@ public class jessCommandServlet extends HttpServlet {
         }
         
         
-        if (request.getParameter("ID").equalsIgnoreCase("factHistoryFigureRequest")){
-            
-            ai = ArchWebInterface.getInstance();
-            this.resu = ai.getResult();
-            Rete r = resu.getRete();
-            QueryBuilder qb = resu.getQueryBuilder();
-            
-            String subobj = request.getParameter("subobj");
-            String factHistory = "";
-            String factName = "";
-            String jsonObj = "";
-            try{
-                
-                ArrayList<Fact> facts = qb.makeQuery("AGGREGATION::SUBOBJECTIVE (id "+ subobj +")");
-                double max_sat = -1;
-                Fact f = facts.get(0);
-                for(int i=0;i<facts.size();i++){
-                    double temp = facts.get(i).getSlotValue("satisfaction").floatValue(r.getGlobalContext());
-                    if(temp >= max_sat){
-                        f = facts.get(i);
-                    }
-                }
-                
-                Fact RequestedFact = f;
-                int factID = f.getFactId();
-                factHistory = RequestedFact.getSlotValue("factHistory").stringValue(resu.getRete().getGlobalContext());
-                factName = RequestedFact.getName();
-                factAndRuleNode farn = new factAndRuleNode(factID,factHistory);
-                jsonObj = gson.toJson(farn);
-                
-//                System.out.println(factName + " factHistory request: "+jsonObj);
-            }catch(Exception e){
-                System.out.println(e.getMessage());
-            }
-            outputString = jsonObj;
-//            response.sendRedirect("/CritiquerWebApplication/executionTrace.html");
-        }
+
 
         response.flushBuffer();
         response.setContentType("text/html");
@@ -492,24 +529,28 @@ public class jessCommandServlet extends HttpServlet {
             this.ID = mainFactID;
             this.type = "fact";
             children = new ArrayList<>();
-            String factHistory = factHistoryInput.replace('{', '(');
-            factHistory = factHistory.replace('}',')');
-            ActionAnalyzer aa = new ActionAnalyzer();
-            int level = aa.getNestedParenLevel(factHistory);
+            String factHistory = factHistoryInput.replace('{', '(').replace('}',')');
             
+            JessExpressionAnalyzer jea = new JessExpressionAnalyzer();
+            int level = jea.getNestedParenLevel(factHistory);
             for (int i=0; i < level; i++){
-                String inside = aa.getInsideParen(factHistory,i+1);
+                
+                String inside = jea.getInsideParen(factHistory,i+1);
                 String[] insideSplit = inside.split(" ", 2);
                 if (insideSplit[0].substring(1).equalsIgnoreCase("nil")){
                     System.out.println("nil factID found");
                     continue;
                 }
+                
+                // First element of a factHistory should be a rule
                 int ruleID = Integer.parseInt(insideSplit[0].substring(1));
                 String rest = insideSplit[1];
-                rest = aa.collapseAllParenIntoSymbol(rest);
+                rest = jea.collapseAllParenIntoSymbol(rest);
+                
                 String[] restSplit = rest.split(" ");
                 ArrayList<factAndRuleNode> childrenOfRule = new ArrayList<>();
                 ArrayList<factAndRuleNode> emptyList = new ArrayList<>();
+                
                 for (String tmp:restSplit){
                     if((tmp.startsWith("A")) || (tmp.startsWith("F")) || (tmp.startsWith("S")) || (tmp.startsWith("D")) || (tmp.startsWith("J"))){
                         int factID = Integer.parseInt(tmp.substring(1));

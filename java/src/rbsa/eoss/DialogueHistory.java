@@ -145,7 +145,7 @@ public class DialogueHistory {
                     }
                 }
             targetFact = maxScoreFact;
-            factHistoryAnalyzer fha = new factHistoryAnalyzer(targetFact,targetSlotName,r,qb);
+            FactHistoryAnalyzer fha = new FactHistoryAnalyzer(targetFact,targetSlotName,r,qb);
             
             String inheritRuleName = "";
             if ((Params.req_mode.equalsIgnoreCase("FUZZY-CASES")) || (Params.req_mode.equalsIgnoreCase("FUZZY-ATTRIBUTES"))) {
@@ -164,7 +164,7 @@ public class DialogueHistory {
             String newHistory = tmpFact.getSlotValue("factHistory").stringValue(r.getGlobalContext());
             
             jess.Defrule relRule = Params.rules_defrule_map.get(relRuleName);
-            ruleAnalyzer ra = new ruleAnalyzer(relRule,r,qb);
+            JessRuleAnalyzer ra = new JessRuleAnalyzer(relRule,r,qb);
             if(ra.checkInheritance(targetSlotName)){
                 fha.setTargetFact(targetFact);
                 String[] tmp2 = fha.traceInheritance(relRuleName, targetSlotName, newHistory);
@@ -173,7 +173,7 @@ public class DialogueHistory {
                 tmpFact = r.findFactByID(Integer.parseInt(newFactID));
                 newHistory = tmpFact.getSlotValue("factHistory").stringValue(r.getGlobalContext());
                 relRule = Params.rules_defrule_map.get(relRuleName);
-                ra = new ruleAnalyzer(relRule,r,qb);
+                ra = new JessRuleAnalyzer(relRule,r,qb);
             } 
             
             String description = "";
@@ -297,7 +297,7 @@ public class DialogueHistory {
             Defrule prevRule = Params.rules_defrule_map.get(prevRuleName);
             Fact prevFact = r.findFactByID(Integer.parseInt(prevFactID.substring(1)));
             String factHis = prevFact.getSlotValue("factHistory").stringValue(r.getGlobalContext());
-            ruleAnalyzer ra = new ruleAnalyzer(prevRule,r,qb);
+            JessRuleAnalyzer ra = new JessRuleAnalyzer(prevRule,r,qb);
             ActionAnalyzer aa = ra.getActionAnalyzer();
             
             ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
@@ -312,7 +312,7 @@ public class DialogueHistory {
             ArrayList<String> allSlots = cea.getAllSlotNames(pat); // obtain slots that appear on the LHS of the rule
             
             
-            factHistoryAnalyzer fha = new factHistoryAnalyzer(prevFact,r,qb);
+            FactHistoryAnalyzer fha = new FactHistoryAnalyzer(prevFact,r,qb);
             String newfactHis = fha.findRuleInHistory(prevRuleID, factHis); // returns only the LHS info within factHistory
             newfactHis = newfactHis.split(" ",2)[1];  // getting rid of the rule ID
             newfactHis = aa.collapseAllParenIntoSymbol(newfactHis);
@@ -372,7 +372,7 @@ public class DialogueHistory {
         
         String ruleName = Params.rules_IDtoName_map.get(ruleID);
         Defrule rule = Params.rules_defrule_map.get(ruleName);
-        ruleAnalyzer ra = new ruleAnalyzer(rule,r,qb);
+        JessRuleAnalyzer ra = new JessRuleAnalyzer(rule,r,qb);
         System.out.println("------------------------------------------------------------------------------------------------------------------");
         ra.printDefrule(ruleName);
         System.out.println("------------------------------------------------------------------------------------------------------------------");
@@ -488,7 +488,7 @@ public class DialogueHistory {
                                 else if ((Params.req_mode.equalsIgnoreCase("CRISP-CASES")) || (Params.req_mode.equalsIgnoreCase("CRISP-ATTRIBUTES"))) {
                                     targetRule = (Defrule) Params.rules_defrule_map.get("REQUIREMENTS::" + targetID + "-attrib");
                                 }
-                                ruleAnalyzer ra = new ruleAnalyzer(targetRule,r,qb);
+                                JessRuleAnalyzer ra = new JessRuleAnalyzer(targetRule,r,qb);
                                 ActionAnalyzer aa = ra.getActionAnalyzer();
                                 ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
                                 String action = ra.getActionContainingDesiredExpression("bind " + varName);
@@ -506,7 +506,7 @@ public class DialogueHistory {
                                 else if ((Params.req_mode.equalsIgnoreCase("CRISP-CASES")) || (Params.req_mode.equalsIgnoreCase("CRISP-ATTRIBUTES"))) {
                                     targetRule = (Defrule) Params.rules_defrule_map.get("REQUIREMENTS::" + targetID + "-attrib");
                                 }
-                                ruleAnalyzer ra = new ruleAnalyzer(targetRule,r,qb);
+                                JessRuleAnalyzer ra = new JessRuleAnalyzer(targetRule,r,qb);
                                 ActionAnalyzer aa = ra.getActionAnalyzer();
                                 ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
                                 String action = ra.getActionContainingDesiredExpression("bind " + varName);

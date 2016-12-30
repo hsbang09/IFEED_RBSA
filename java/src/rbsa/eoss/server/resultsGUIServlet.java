@@ -34,7 +34,7 @@ import rbsa.eoss.Result;
 import rbsa.eoss.ResultCollection;
 import rbsa.eoss.ResultManager;
 import rbsa.eoss.local.Params;
-import rbsa.eoss.ruleAnalyzer;
+import rbsa.eoss.JessRuleAnalyzer;
 
 
 /**
@@ -390,9 +390,11 @@ public class resultsGUIServlet extends HttpServlet {
                 targetRule = (Defrule) Params.rules_defrule_map.get("REQUIREMENTS::" + subobjID + "-attrib");
             }       
 //            
-            ruleAnalyzer ra = new ruleAnalyzer(targetRule,r,qb);            
+            JessRuleAnalyzer ra = new JessRuleAnalyzer(targetRule,r,qb);            
             ActionAnalyzer aa = ra.getActionAnalyzer();
             ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
+            
+            
             ArrayList subobjectiveFacts = new ArrayList();
 //            
             int nil_fact = 0;
@@ -508,6 +510,11 @@ public class resultsGUIServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
+    
+    public rbsa.eoss.Result getResult(){
+        return this.resu;
+    }
+    
     
     public int[][] bitString2IntMat(String bitString){
         int norb = Params.orbit_list.length;

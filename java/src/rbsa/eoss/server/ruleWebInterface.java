@@ -18,12 +18,12 @@ import jess.Rete;
 import rbsa.eoss.ActionAnalyzer;
 import rbsa.eoss.ConditionalElementAnalyzer;
 import rbsa.eoss.QueryBuilder;
-import rbsa.eoss.ruleAnalyzer;
+import rbsa.eoss.JessRuleAnalyzer;
 import rbsa.eoss.local.Params;
 
 public class ruleWebInterface {
     
-    ruleAnalyzer ra;
+    JessRuleAnalyzer ra;
     ActionAnalyzer aa;
     ConditionalElementAnalyzer cea;
     Rete r;
@@ -41,7 +41,7 @@ public class ruleWebInterface {
         Defrule thisRule = Params.rules_defrule_map.get(ruleName);
         String ruleDoc = thisRule.getDocstring();
         
-        ra = new ruleAnalyzer(thisRule,r,qb);
+        ra = new JessRuleAnalyzer(thisRule,r,qb);
         aa = ra.getActionAnalyzer();
         cea = ra.getConditionalElementAnalyzer();
         
