@@ -118,11 +118,7 @@ public class jessCommandServlet extends HttpServlet {
             
             String subobj = request.getParameter("subobj");
             String factID_String = request.getParameter("factID");
-            
-            System.out.println("subobj: " + subobj + ", factID: " + factID_String);
-            ArrayList<Fact> facts_test = qb.makeQuery("AGGREGATION::SUBOBJECTIVE");
-            System.out.println("num of agg facts: " + facts_test.size());
-            
+            ArrayList<Fact> facts_test = qb.makeQuery("AGGREGATION::SUBOBJECTIVE");            
             String factHistory = "";
             String factName = "";
             String jsonObj = "";
@@ -157,29 +153,7 @@ public class jessCommandServlet extends HttpServlet {
             }
             outputString = jsonObj;
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
         
         
         if (request.getParameter("ID").equalsIgnoreCase("getFactName")){
@@ -210,24 +184,9 @@ public class jessCommandServlet extends HttpServlet {
             outputString = ruleName;
         }
 
+
         
-        if (request.getParameter("ID").equalsIgnoreCase("requestppdefrule")){
-            String ppdefrule = "";
-            try{
-                String ruleID_string = request.getParameter("ruleID");
-                int ruleID = Integer.parseInt(ruleID_string);
-                String ruleName = Params.rules_IDtoName_map.get(ruleID);
-                
-                jess.Value ppdefruleVal = resu.getRete().eval("(ppdefrule "+ruleName+")");
-                ppdefrule = ppdefruleVal.stringValue(resu.getRete().getGlobalContext());
-                
-            } catch(Exception e){
-                e.printStackTrace();
-            }
-            outputString = ppdefrule;
-        }
-        
-                if (request.getParameter("ID").equalsIgnoreCase("requestppdefrule")){
+       if (request.getParameter("ID").equalsIgnoreCase("requestppdefrule")){
             String ppdefrule = "";
             try{
                 String ruleID_string = request.getParameter("ruleID");
@@ -310,9 +269,7 @@ public class jessCommandServlet extends HttpServlet {
                         }
                     }
                 }
-                
-                
-              
+
                 outputRuleID = "" + ruleID;
 
             } catch(Exception e){
@@ -457,8 +414,6 @@ public class jessCommandServlet extends HttpServlet {
             } catch(Exception e){
                 e.printStackTrace();
             }
-            
-//            outputString = jsonObj;
             outputString = gson.toJson(outputStrings);
 //            outputString = ppdefrule_LHS + "=> \n" + ppdefrule_RHS;
         }

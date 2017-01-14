@@ -723,13 +723,10 @@ function update_nodes(){
 
 function initialize_nodes(inputJsonObj,init_xloc,init_yloc){  // -> Even level means facts, odd level means rules. Initialization at level=0
 
-    var factRow=[],
-        ruleRow=[];
-    factRow.length=0;
-    ruleRow.length=0;
+    var factRow=[];
+    var ruleRow=[];
 
     var temp_nodes = tree_factHis.nodes(inputJsonObj);
-
     temp_nodes.forEach(function(n, i) {
 
             var xloc = init_xloc;
@@ -775,9 +772,7 @@ function initialize_nodes(inputJsonObj,init_xloc,init_yloc){  // -> Even level m
             } else{
                 ruleRow.push(n.ID); // save list of rules fired
             }
-
             color_factHis(cValue(n));
-
             n.x = xloc;
             n.y = yloc;
         });
