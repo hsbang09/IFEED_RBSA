@@ -6,22 +6,25 @@
 	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
 	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="java/activation.jar"/>
-	<classpathentry kind="lib" path="java/combinatoricslib-2.0.jar"/>
-	<classpathentry kind="lib" path="java/commons-lang3-3.1.jar"/>
-	<classpathentry kind="lib" path="java/gson-2.3.1.jar"/>
-	<classpathentry kind="lib" path="java/jaDTi-0.6.1.jar"/>
-	<classpathentry kind="lib" path="java/javax.mail.jar"/>
-	<classpathentry kind="lib" path="java/jcommon-1.0.22.jar"/>
-	<classpathentry kind="lib" path="java/jess.jar"/>
-	<classpathentry kind="lib" path="java/jfreechart-1.0.18.jar"/>
-	<classpathentry kind="lib" path="java/json-simple-1.1.1.jar"/>
-	<classpathentry kind="lib" path="java/jxl.jar"/>
-	<classpathentry kind="lib" path="java/log4j-1.2.15.jar"/>
-	<classpathentry kind="lib" path="java/madkit-5.0.5.jar"/>
-	<classpathentry kind="lib" path="java/matlabcontrol-4.0.0.jar"/>
-	<classpathentry kind="lib" path="java/smtp-1.4.4.jar"/>
-	<classpathentry kind="lib" path="java/swt.jar"/>
-	<classpathentry kind="lib" path="java/weka.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/activation.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/combinatoricslib-2.0.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/commons-lang3-3.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/gson-2.3.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/gwt-servlet.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jaDTi-0.6.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/javax.mail.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jcommon-1.0.22.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jdo-api-3.0.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jess.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jfreechart-1.0.18.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jxl.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/madkit-5.0.5.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/matlabcontrol-4.0.0.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/slf4j-api-1.7.21.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/smtp-1.4.4.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/swt.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/weka.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

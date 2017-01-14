@@ -46,7 +46,7 @@ public class resultsGUIServlet extends HttpServlet {
     
     private static final long serialVersionUID = 1257649107469947355L;
 
-    private Gson gson = new Gson();
+    private com.google.gson.Gson gson = new com.google.gson.Gson();
     ResultManager RM = ResultManager.getInstance();
     private static resultsGUIServlet instance=null;
 	ServletContext sctxt;
