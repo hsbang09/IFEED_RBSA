@@ -13,7 +13,17 @@ import java.util.ArrayList;
  */
 public class JessExpressionAnalyzer {
     
+    private static JessExpressionAnalyzer instance = null;
     
+    
+    public static JessExpressionAnalyzer getInstance()
+    {
+        if( instance == null ) 
+        {
+            instance = new JessExpressionAnalyzer();
+        }
+        return instance;
+    }
     
     /**
      * This function checks if the input string contains a parenthesis

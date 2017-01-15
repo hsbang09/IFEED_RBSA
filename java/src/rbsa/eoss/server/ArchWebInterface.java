@@ -50,7 +50,7 @@ public class ArchWebInterface {
     
         Madkit kernel;
         String search_clps = "";
-        String path = "/Users/bang/workspace/IFEED_RBSA";
+        String path = "/";
         params = new Params(path, "FUZZY-ATTRIBUTES", "test","normal",search_clps);//FUZZY or CRISP
 
         AE = ArchitectureEvaluator.getInstance();

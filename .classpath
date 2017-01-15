@@ -26,5 +26,8 @@
 	<classpathentry kind="lib" path="war/WEB-INF/lib/smtp-1.4.4.jar"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/swt.jar"/>
 	<classpathentry kind="lib" path="war/WEB-INF/lib/weka.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/bson-3.4.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/mongodb-driver-3.4.1.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/mongodb-driver-core-3.4.1.jar"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

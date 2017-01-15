@@ -35,6 +35,7 @@ import rbsa.eoss.ResultCollection;
 import rbsa.eoss.ResultManager;
 import rbsa.eoss.local.Params;
 import rbsa.eoss.JessRuleAnalyzer;
+import rbsa.eoss.DBManagement;
 
 
 /**
@@ -165,6 +166,11 @@ public class resultsGUIServlet extends HttpServlet {
         
         
         else if (requestID.equalsIgnoreCase("resultFileURL_newData")){
+        	
+        	DBManagement dbm = new DBManagement();
+        	
+        	
+        	
             
             String resultPath = request.getParameter("filePath");
             InputStream file = sctxt.getResourceAsStream(resultPath);
