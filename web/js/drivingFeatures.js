@@ -79,7 +79,7 @@ function generateDrivingFeatures(selected,nonSelected,
 	
 	var output;
     $.ajax({
-        url: "drivingFeatureServlet",
+        url: "DrivingFeatureServlet",
         type: "POST",
         data: {ID: "generateDrivingFeatures",selected: JSON.stringify(selected),nonSelected:JSON.stringify(nonSelected),
         	supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,

@@ -336,7 +336,7 @@ and open the template in the editor.
        <script src="js/classificationTree.js" type="text/javascript"></script>
        <script src="js/userDefinedFilter.js" type="text/javascript"></script>
        <script src="js/relabel.js" type="text/javascript"></script>
-       <script src="js/DesignInspection.js" type="text/javascript"></script>
+       <script src="js/satisfactionScoreSummary.js" type="text/javascript"></script>
 
 
        
@@ -432,7 +432,7 @@ and open the template in the editor.
                 var filePath = "/results/1.rs";                
                 $.ajax(
                         {
-                            url: "resultsGUIServlet",
+                            url: "ResultsServlet",
                             type: "POST",
                             data: {ID: "resultFileURL_newData", filePath:filePath},
                             async: false,
@@ -467,7 +467,7 @@ and open the template in the editor.
                 var numOfSelectedArchs = selectedArchs.size();
 
                 $.ajax({
-                	url: "resultsGUIServlet",
+                	url: "ResultsServlet",
                 	type: "POST",
                 	data: {ID: "resultFileURL_addData",filePath:filePath},
                 	async: false,
@@ -496,7 +496,7 @@ and open the template in the editor.
             function extractInfoFromBitString(bitString) {
                 var jsonObj_arch
                 $.ajax({
-                    url: "resultsGUIServlet",
+                    url: "ResultsServlet",
                     type: "POST",
                     data: {ID: "extractInfoFromBitString", bitString: bitString},
                     async: false,
@@ -641,7 +641,7 @@ and open the template in the editor.
             function getOrbitList() {
                 var orbitList
                 $.ajax({
-                    url: "resultsGUIServlet",
+                    url: "ResultsServlet",
                     type: "POST",
                     data: {ID: "getOrbitList"},
                     async: false,
@@ -659,7 +659,7 @@ and open the template in the editor.
             function getInstrumentList() {
                 var instrumentList
                 $.ajax({
-                    url: "resultsGUIServlet",
+                    url: "ResultsServlet",
                     type: "POST",
                     data: {ID: "getInstrumentList"},
                     async: false,

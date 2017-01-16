@@ -73,7 +73,7 @@ function cValue(n) {
 function factHistory_figure_request(subobj_id){
     var jsonObj_factHis;
     $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {ID:"factHistoryFigureRequest",subobj:subobj_id, factID:""},
@@ -798,7 +798,7 @@ function mergeArrays(arr1,arr2){
 function get_ruleObj_json(ruleID){
     var ruleObj_json;
     var ruleAJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"getRuleObjJson","ruleID":ruleID},
@@ -950,7 +950,7 @@ function rule_visualizer(jsonObj_rule){
 function get_ppdefrule(ruleID){
     var ppdefrule;
     var ppdefruleAJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"requestppdefrule","ruleID":ruleID},
@@ -972,7 +972,7 @@ function get_ppdefrule(ruleID){
 function get_factName(factID){
     var factName;
     var factAJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"getFactName","factID":factID},
@@ -994,7 +994,7 @@ function get_factName(factID){
 function get_ruleName(ruleID){
     var ruleName;
     var ruleAJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"getRuleName","ruleID":ruleID},
@@ -1016,7 +1016,7 @@ function get_ruleName(ruleID){
 function get_factHistory(idNum){
     var factHis;
     $.ajax({
-        url: "jessCommandServlet",
+        url: "JessCommandServlet",
         type: "POST",
         data: {ID: "factHistoryFigureRequest",subobj:"",factID: idNum},
         async: false,
@@ -1136,7 +1136,7 @@ function highlightFact(factID){
 function get_slotNames(factID){
     var slotNames;
     var slotNameAJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"getSlotNames","factID":factID},
@@ -1224,7 +1224,7 @@ function highlight_links(factID, slotName){
 function get_slotValue(factID,slotName){
     var slotValue;
     var slotValueAJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"getSlotValue","factID":factID, "slotName":slotName},
@@ -1246,7 +1246,7 @@ function get_slotValue(factID,slotName){
 function get_relevantRule(factID,slotName){
     var relevantRuleID;
     var AJAX = $.ajax({
-        url : "jessCommandServlet",
+        url : "JessCommandServlet",
         type: "POST",
         async: false,
         data : {"ID":"getRelevantRule","factID":factID, "slotName":slotName},

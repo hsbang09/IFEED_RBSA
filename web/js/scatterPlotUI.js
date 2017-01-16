@@ -869,7 +869,7 @@ function getDrivingFeatures_automated(){
     }
 
     $.ajax({
-        url: "drivingFeatureServlet",
+        url: "DrivingFeatureServlet",
         type: "POST",
         data: {ID: "automaticFeatureGeneration",selected: JSON.stringify(selectedBitStrings),nonSelected:JSON.stringify(nonSelectedBitStrings),
         	supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,

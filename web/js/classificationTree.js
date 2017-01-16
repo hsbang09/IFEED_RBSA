@@ -71,7 +71,7 @@ function buildClassificationTree(){
 	
 	var output;
     $.ajax({
-        url: "drivingFeatureServlet",
+        url: "DrivingFeatureServlet",
         type: "POST",
         data: {ID: "buildClassificationTree"},
         async: false,

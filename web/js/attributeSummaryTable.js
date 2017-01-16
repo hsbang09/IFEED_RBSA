@@ -5,7 +5,7 @@ function attribute_score_summary_request(thisSubobj){
     
     var jsonObj_attrScores  
     $.ajax({      
-        url: "resultsGUIServlet",          
+        url: "ResultsServlet",          
         type: "POST",        
         data: {ID: "attributeScoreSummaryRequest", subobj: thisSubobj},
         async: false,

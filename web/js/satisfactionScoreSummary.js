@@ -6,7 +6,7 @@ function satisfaction_score_summary_request(arch){
     var bitString = booleanArray2String(arch[0].bitString);
         
     $.ajax({
-        url: "resultsGUIServlet",
+        url: "ResultsServlet",
         type: "POST",
         data: {ID: "satisfactionScoreSummaryRequest", bitString: bitString},
         async: false,
