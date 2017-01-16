@@ -28,7 +28,7 @@ import rbsa.eoss.Apriori;
  *
  * @author Bang
  */
-@WebServlet(name = "drivingFeatureServlet", urlPatterns = {"/drivingFeatureServlet"})
+@WebServlet(name = "DrivingFeatureServlet", urlPatterns = {"/DrivingFeatureServlet"})
 public class DrivingFeatureServlet extends HttpServlet {
 
     

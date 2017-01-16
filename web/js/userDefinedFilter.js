@@ -340,7 +340,7 @@ function applyUserDefFilter_single(expression,prev,logic,bitString){
             if(d3.select(d).attr("paretoRank")!== ""+paretoRank){
                 return false;
             }
-            var thisBitString = d.__data__.archBitString;
+            var thisBitString = d.__data__.bitString;
             for(var i=0;i<thisBitString.length;i++){
                 if(thisBitString[i]!==bitString[i]){
                     return false;
@@ -352,7 +352,7 @@ function applyUserDefFilter_single(expression,prev,logic,bitString){
             if(d3.select(d).attr("paretoRank")!== ""+paretoRank){
                 return false;
             }
-            var thisBitString = d.__data__.archBitString;
+            var thisBitString = d.__data__.bitString;
             for(var i=0;i<thisBitString.length;i++){
                 if(thisBitString[i]!==bitString[i]){
                     return false;
@@ -456,7 +456,7 @@ function calculateLiftSuppConf(filtered){
     for(var i=0;i<filtered.length;i++){
         for(var j=0;j<selected.length;j++){
             if(filtered[i].__data__.science==selected[j].__data__.science && filtered[i].__data__.cost == selected[j].__data__.cost){
-                if(booleanArray2String(filtered[i].__data__.archBitString)==booleanArray2String(selected[j].__data__.archBitString)){
+                if(booleanArray2String(filtered[i].__data__.bitString)==booleanArray2String(selected[j].__data__.bitString)){
                     cnt++;
                     break;
                 }

@@ -42,7 +42,7 @@ import rbsa.eoss.DBManagement;
  *
  * @author Bang
  */
-@WebServlet(name = "resultsGUIServlet", urlPatterns = {"/resultsGUIServlet"})
+@WebServlet(name = "ResultsServlet", urlPatterns = {"/ResultsServlet"})
 public class ResultsServlet extends HttpServlet {
     
     private static final long serialVersionUID = 1257649107469947355L;
@@ -166,6 +166,13 @@ public class ResultsServlet extends HttpServlet {
         
         
         else if (requestID.equalsIgnoreCase("resultFileURL_newData")){
+            
+            DBManagement dbm = new DBManagement();
+            System.out.println(dbm.getNArchs());
+            
+            
+            
+            
             
             String resultPath = request.getParameter("filePath");
             InputStream file = sctxt.getResourceAsStream(resultPath);

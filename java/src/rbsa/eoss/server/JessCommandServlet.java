@@ -42,7 +42,7 @@ import rbsa.eoss.local.Params;
  * @author Bang
  */
 
-@WebServlet(name = "jessCommandServlet", urlPatterns = {"/jessCommandServlet"})
+@WebServlet(name = "JessCommandServlet", urlPatterns = {"/JessCommandServlet"})
 public class JessCommandServlet extends HttpServlet {
 
     

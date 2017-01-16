@@ -29,11 +29,11 @@
 //
 //    
 //    for (var i = 0; i < numOfSelectedArchs; i++) {
-//        var tmpBitString = booleanArray2String(selectedArchs[0][i].__data__.archBitString);
+//        var tmpBitString = booleanArray2String(selectedArchs[0][i].__data__.bitString);
 //        selectedBitStrings.push(tmpBitString);
 //    }
 //    for (var i = 0; i < numOfNonSelectedArchs; i++) {
-//        var tmpBitString = booleanArray2String(nonSelectedArchs[0][i].__data__.archBitString);
+//        var tmpBitString = booleanArray2String(nonSelectedArchs[0][i].__data__.bitString);
 //        nonSelectedBitStrings.push(tmpBitString);
 //    }
 //   
@@ -469,14 +469,14 @@ function apply_filter_name(name, isFirst, condInput){
             
     	if(isFirst==true){
             d3.selectAll("[class=dot]")[0].forEach(function (d) {
-            	var bitString = d.__data__.archBitString;
+            	var bitString = d.__data__.bitString;
         		if (presetFilter2(type_modified,bitString,filterInputs,false)==condInput){
         			d3.select(d).attr("class", "dot_DFhighlighted")
         						.style("fill", "#F75082");
     			}
             });
             d3.selectAll("[class=dot_clicked]")[0].forEach(function (d) {
-            	var bitString = d.__data__.archBitString;
+            	var bitString = d.__data__.bitString;
         		if (presetFilter2(type_modified,bitString,filterInputs,false)==condInput){
         			d3.select(d).attr("class", "dot_selected_DFhighlighted")
         						.style("fill", "#F75082");
@@ -484,7 +484,7 @@ function apply_filter_name(name, isFirst, condInput){
             });
     	}else{
             d3.selectAll("[class=dot_DFhighlighted]")[0].forEach(function (d) {
-            	var bitString = d.__data__.archBitString;
+            	var bitString = d.__data__.bitString;
         		if (presetFilter2(type_modified,bitString,filterInputs,false) != condInput){
         			d3.select(d).attr("class", "dot")
                             .style("fill", function (d) {
@@ -499,7 +499,7 @@ function apply_filter_name(name, isFirst, condInput){
     			}
             });
             d3.selectAll("[class=dot_selected_DFhighlighted]")[0].forEach(function (d) {
-            	var bitString = d.__data__.archBitString;
+            	var bitString = d.__data__.bitString;
         		if (presetFilter2(type_modified,bitString,filterInputs,false) != condInput){
                    
         			d3.select(d).attr("class", "dot_clicked")
@@ -511,14 +511,14 @@ function apply_filter_name(name, isFirst, condInput){
     		type_modified = type;
         	if(first==true){
                 d3.selectAll("[class=dot]")[0].forEach(function (d) {
-                	var bitString = d.__data__.archBitString;
+                	var bitString = d.__data__.bitString;
             		if (applyUserDefFilterFromExpression(type_modified,bitString) == condInput){
             			d3.select(d).attr("class", "dot_DFhighlighted")
             						.style("fill", "#F75082");
         			}
                 });
                 d3.selectAll("[class=dot_clicked]")[0].forEach(function (d) {
-                	var bitString = d.__data__.archBitString;
+                	var bitString = d.__data__.bitString;
             		if (applyUserDefFilterFromExpression(type_modified,bitString) == condInput){
             			d3.select(d).attr("class", "dot_selected_DFhighlighted")
             						.style("fill", "#F75082");
@@ -526,7 +526,7 @@ function apply_filter_name(name, isFirst, condInput){
                 });
         	}else{
                 d3.selectAll("[class=dot_DFhighlighted]")[0].forEach(function (d) {
-                	var bitString = d.__data__.archBitString;
+                	var bitString = d.__data__.bitString;
             		if (applyUserDefFilterFromExpression(type_modified,bitString) != condInput){
                         
             			d3.select(d).attr("class", "dot")
@@ -542,7 +542,7 @@ function apply_filter_name(name, isFirst, condInput){
         			}
                 });
                 d3.selectAll("[class=dot_selected_DFhighlighted]")[0].forEach(function (d) {
-                	var bitString = d.__data__.archBitString;
+                	var bitString = d.__data__.bitString;
             		if (applyUserDefFilterFromExpression(type_modified,bitString) != condInput){
                        
             			d3.select(d).attr("class", "dot_clicked")

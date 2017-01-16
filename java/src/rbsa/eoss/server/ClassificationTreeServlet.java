@@ -28,7 +28,7 @@ import rbsa.eoss.local.Params;
  *
  * @author Bang
  */
-@WebServlet(name = "classificationTreeServlet", urlPatterns = {"/classificationTreeServlet"})
+@WebServlet(name = "ClassificationTreeServlet", urlPatterns = {"/ClassificationTreeServlet"})
 public class ClassificationTreeServlet extends HttpServlet {
 
     private Gson gson = new Gson();
