@@ -359,6 +359,19 @@ public class DBManagement {
     }
     
     
+    public ArrayList<org.bson.Document> getMetadata(){
+        ArrayList<org.bson.Document> docs = new ArrayList<>();
+        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
+        MongoCollection col = Mdb.getCollection(this.metaDataCollectionName);
+        FindIterable found = col.find();
+        MongoCursor iter = found.iterator();
+        while(iter.hasNext()){
+            org.bson.Document doc = (Document) iter.next();
+            docs.add(doc);
+        }
+        return docs;
+    }
+    
     
     
     

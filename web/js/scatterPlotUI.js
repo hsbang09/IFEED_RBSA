@@ -29,7 +29,7 @@ function draw_scatterPlot(source) {
         return d.science;
     }; // data -> value
     xScale = d3.scale.linear().range([0, width]); // value -> display
-    //
+
     // don't want dots overlapping axis, so add in buffer to data domain 
     xBuffer = (d3.max(source, xValue) - d3.min(source, xValue)) * 0.05;
     xScale.domain([d3.min(source, xValue) - xBuffer, d3.max(source, xValue) + xBuffer]);
@@ -85,25 +85,25 @@ function draw_scatterPlot(source) {
                                 var yCoord = yMap(d);
                                 return "translate(" + xCoord + "," + yCoord + ")";
                             });
-                    svg.selectAll("[class=dot_clicked]")
+                    svg.selectAll("[class=dot_highlighted]")
                             .attr("transform", function (d) {
                                 var xCoord = xMap(d);
                                 var yCoord = yMap(d);
                                 return "translate(" + xCoord + "," + yCoord + ")";
                             });
                     svg.selectAll("[class=dot_hidden]")
-                    .attr("transform", function (d) {
-                        var xCoord = xMap(d);
-                        var yCoord = yMap(d);
-                        return "translate(" + xCoord + "," + yCoord + ")";
-                    });
-                    
+                            .attr("transform", function (d) {
+                                var xCoord = xMap(d);
+                                var yCoord = yMap(d);
+                                return "translate(" + xCoord + "," + yCoord + ")";
+                            });
                     
                     svg.selectAll("[class=paretoFrontier]")
                             .attr("transform", function (d) {
                                 return "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")";
                             })
                             .attr("stroke-width",1.5/d3.event.scale);
+
 
                     translate_tmp = d3.event.translate;
                     scale_tmp = d3.event.scale;
@@ -170,8 +170,6 @@ function draw_scatterPlot(source) {
                 var yCoord = yMap(d);
                 return "translate(" + xCoord + "," + yCoord + ")";
             })
-//                .attr("cx", xMap)
-//                .attr("cy", yMap)
             .style("fill", function (d) {
                 if (d.status == "origianlData") {
                     return "#000000";
@@ -183,23 +181,12 @@ function draw_scatterPlot(source) {
                     return "#000000";
                 }
             });
-
-
     dots.on("mouseover", dot_mouseover)
-            .on("mouseout", function (d) {
-                if (d3.select(this).attr("class") == "dot_clicked") {
-                } else if (d3.select(this)[0][0].__data__.status == "justAdded") {
-                    d3.select(this).style("fill", "#20FE5B");
-                } else if (d3.select(this)[0][0].__data__.status == "added") {
-                    d3.select(this).style("fill", "#188836");
-                } else {
-                    d3.select(this).style("fill", "#000000");
-                }
-            });
+            .on("mouseout", dot_mouseout);
     dots.on("click", dot_click);
 
+
     initialize_tabs();
-    
     d3.select("[id=selectArchsWithinRangeButton]")[0][0].disabled = false;
     d3.select("[id=cancel_selection]")[0][0].disabled = false;
 //    d3.select("[id=hide_selection]")[0][0].disabled = false;
@@ -207,18 +194,16 @@ function draw_scatterPlot(source) {
 	
     d3.select("[id=scatterPlotFigure]").on("click",unhighlight_basic_info_box);
     d3.select("[id=basicInfoBox_div]").on("click",highlight_basic_info_box);
-	d3.selectAll("[id=getDrivingFeaturesButton]").on("click", runDataMining);
+    d3.selectAll("[id=getDrivingFeaturesButton]").on("click", runDataMining);
     d3.select("[id=selectArchsWithinRangeButton]").on("click", selectArchsWithinRange);
     d3.select("[id=cancel_selection]").on("click",cancelDotSelections);
 //    d3.select("[id=hide_selection]").on("click",hideSelection);
 //    d3.select("[id=show_all_archs]").on("click",show_all_archs);
     d3.select("[id=openFilterOptions]").on("click",openFilterOptions);
-    d3.select("[id=drivingFeaturesAndSensitivityAnalysis_div]").selectAll("options");
     d3.select("[id=numOfArchs_inputBox]").text(""+numOfArchs());
     d3.selectAll("[class=dot]")[0].forEach(function(d,i){
         d3.select(d).attr("paretoRank",-1);
     });
-
 
     orbitList = getOrbitList();
     instrList = getInstrumentList();
@@ -229,7 +214,6 @@ function draw_scatterPlot(source) {
     drawParetoFront();
     
     selection_changed = true;
-    
 }
 
 
@@ -245,7 +229,7 @@ function add_newArchs_to_scatterPlot() {
 
 function selectArchsWithinRange() {
 	
-    var clickedArchs = d3.selectAll("[class=dot_clicked]");
+    var clickedArchs = d3.selectAll("[class=dot_highlighted]");
     var unClickedArchs = d3.selectAll("[class=dot]");
 
     var minCost = d3.select("[id=selectArchsWithinRange_minCost]")[0][0].value;
@@ -274,7 +258,7 @@ function selectArchsWithinRange() {
             return true;
         }
     })
-            .attr("class", "dot_clicked")
+            .attr("class", "dot_highlighted")
             .style("fill", "#0040FF");
 
     clickedArchs.filter(function (d) {
@@ -312,7 +296,7 @@ function selectArchsWithinRange() {
 }
 
 function cancelDotSelections(){
-    var clickedArchs = d3.selectAll("[class=dot_clicked]");
+    var clickedArchs = d3.selectAll("[class=dot_highlighted]");
 
     clickedArchs.attr("class", "dot")
             .style("fill", function (d) {
@@ -334,7 +318,7 @@ function cancelDotSelections(){
 
 function hideSelection(){
 
-    var clickedArchs = d3.selectAll("[class=dot_clicked]");
+    var clickedArchs = d3.selectAll("[class=dot_highlighted]");
 
     clickedArchs.attr("class", "dot_hidden")
             .style("opacity", 0.085);
@@ -377,18 +361,10 @@ function show_all_archs(){
 
 function dot_mouseover(d) {
 
-	if(infoBox_active==true){
-		return;
-	}
-	
-	numOfArchViewed = numOfArchViewed+1;
-	
-	
-    if (d3.select(this).attr("class") == "dot_clicked") {
-    } else {
-        d3.select(this).style("fill", "#D32020");
-    }
-
+    if(infoBox_active==true){
+            return;
+    }	
+    d3.select(this).style("fill", "#D32020");
     d3.select("[id=basicInfoBox_div]").select("[id=view1]").select("g").remove();
     var archInfoBox = d3.select("[id=basicInfoBox_div]").select("[id=view1]")
             .append("g");
@@ -398,54 +374,48 @@ function dot_mouseover(d) {
     archInfoBox.append("p")
             .text("Cost: " + d.cost.toFixed(1));
 
-//    archInfoBox.append("input")
-//            .attr("id", "evalNewArch")
-//            .attr("type", "button")
-//            .attr("value", "Evaluate modified architecture");
-
-
-    var bitString = booleanArray2String(d.bitString);
-
-    original_bitString = bitString;
-    modified_bitString = bitString;
-
+    var bitString = d.bitString;
     draw_archBasicInfoTable(bitString);
-
-
-
-//    document.getElementById("evalNewArch").disabled = true;
-
-    d3.select("[id=instrumentOptions]")
-            .select("table").remove();
-
 }
 
 
+function color_dots(d){
+    if (d3.select(d).attr("class") == "dot_highlighted") {
+        d3.select(d).style("fill","#0040FF");
+    } else if (d3.select(d)[0][0].__data__.status == "justAdded") {
+        d3.select(d).style("fill", "#20FE5B");
+    } else if (d3.select(d)[0][0].__data__.status == "added") {
+        d3.select(d).style("fill", "#188836");
+    } else {
+        d3.select(d).style("fill", "#000000");
+    }
+}
+
+function dot_mouseout(d){
+    color_dots(this);
+}
 
 function dot_click(d) {
-
-    if (d3.select(this).attr("class") == "dot_clicked") {
-        d3.select(this).attr("class", "dot")
-                .style("fill", function (d) {
-                    if (d.status == "added") {
-                        return "#188836";
-                    } else if (d.status == "justAdded") {
-                        return "#20FE5B";
-                    } else {
-                        return "#000000";
-                    }
-                });
-
+    if (d3.select(this).attr("class") == "dot_highlighted") {
+        d3.select(this).attr("class", "dot");
     } else {
-        d3.select(this).attr("class", "dot_clicked")
-                .style("fill", "#0040FF");
-
+        d3.select(this).attr("class", "dot_highlighted");
     }
+    color_dots(this);
+    
     d3.select("[id=numOfSelectedArchs_inputBox]").text(""+numOfSelectedArchs());
     selection_changed = true;
     initialize_tabs_driving_features();
     initialize_tabs_classification_tree();
 }
+
+
+
+
+
+
+
+
 
 
 function scatterPlot_option(selected_option){ // three options: zoom, drag_selection, drag_deselection
@@ -488,7 +458,7 @@ function scatterPlot_option(selected_option){ // three options: zoom, drag_selec
                                         var yCoord = yMap(d);
                                         return "translate(" + xCoord + "," + yCoord + ")";
                                     });
-                            svg.selectAll("[class=dot_clicked]")
+                            svg.selectAll("[class=dot_highlighted]")
                                     .attr("transform", function (d) {
                                         var xCoord = xMap(d);
                                         var yCoord = yMap(d);
@@ -598,7 +568,7 @@ function scatterPlot_option(selected_option){ // three options: zoom, drag_selec
                                 xCoord + margin.left>= b.x && xCoord + margin.left <= b.x+b.width && 
                                 yCoord + margin.top >= b.y && yCoord + margin.top  <= b.y+b.height
                             ) {
-                                d3.select(d).attr("class","dot_clicked")
+                                d3.select(d).attr("class","dot_highlighted")
                                         .style("fill", "#0040FF");      
                                 selection_changed = true;
                                 initialize_tabs_driving_features();
@@ -607,7 +577,7 @@ function scatterPlot_option(selected_option){ // three options: zoom, drag_selec
                         });
 
                     }else{
-                        dots = d3.selectAll("[class=dot_clicked]")[0].forEach(function(d,i){
+                        dots = d3.selectAll("[class=dot_highlighted]")[0].forEach(function(d,i){
                             var sci = d.__data__.science;
                             var cost = d.__data__.cost;
                             var xCoord = xScale(sci);
@@ -1063,3 +1033,6 @@ function set_selection_option(selected_option){
 function round_num_2_perc(num){
 	return Math.round((num + 0.01) * 100);
 }
+
+
+

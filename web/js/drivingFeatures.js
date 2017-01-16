@@ -1501,7 +1501,16 @@ function dfsort(){
     sortedDFs=sortedDrivingFeatures;
     display_drivingFeatures(sortedDrivingFeatures,sortby);
 }
-                
+               
+               
+               
+               
+               
+               
+               
+               
+               
+               
 
 function openFilterOptions(){
     d3.select("[id=basicInfoBox_div]").select("[id=view2]").select("g").remove();

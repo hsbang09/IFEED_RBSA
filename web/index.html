@@ -360,15 +360,8 @@ and open the template in the editor.
             var relabeledOrbitList = [];
             var relabeledInstrList = [];
             var ninstr, norb;
-            
-            // Sign-in
-   
-            var id_token;
-            var account_id =-12345678;
-            var testType = -1;
-            
+
             // Scatter plot variables
-            
             var architectures; 
             var newArchs = [];  newArchs.length = 0;    
             var infoBox_active = false;
@@ -428,13 +421,14 @@ and open the template in the editor.
 
             try {
 
-            function newDataFromResultFile(){
-                var filePath = "/results/1.rs";                
+
+
+            function importNewData(){
                 $.ajax(
                         {
                             url: "ResultsServlet",
                             type: "POST",
-                            data: {ID: "resultFileURL_newData", filePath:filePath},
+                            data: {ID: "import_new_data"},
                             async: false,
                             success: function (data, textStatus, jqXHR)
                             {
@@ -443,56 +437,25 @@ and open the template in the editor.
                             },
                             complete: function () {
                                 reset_drawing_scatterPlot();
+                                draw_scatterPlot(architectures);
                             },
                             error: function (jqXHR, textStatus, errorThrown)
                             {
                                 alert("error");
                             }
                         });
-						orbitList = getOrbitList();
-						instrList = getInstrumentList();  
-						for(var i=0;i<orbitList.length;i++){
-							relabeledOrbitList.push(relabel(orbitList[i]));
-						}
-						for(var i=0;i<instrList.length;i++){
-							relabeledInstrList.push(relabel(instrList[i]));
-						}
-                       	addDataFromResultFile();
-            }
-            
-            function addDataFromResultFile(){
-                var filePath = "/results/3.rs";
-                
-                var selectedArchs = d3.selectAll("[class=dot_clicked]");
-                var numOfSelectedArchs = selectedArchs.size();
-
-                $.ajax({
-                	url: "ResultsServlet",
-                	type: "POST",
-                	data: {ID: "resultFileURL_addData",filePath:filePath},
-                	async: false,
-               		success: function (data, textStatus, jqXHR){
-                    	var tmp_architectures = JSON.parse(data);
-                    	for(var i=0;i<tmp_architectures.length;i++){
-                    		architectures.push(tmp_architectures[i]);
-                    	}
-                    },
-                    complete: function () {
-                    	reset_drawing_scatterPlot();
-                    	draw_scatterPlot(architectures);
-                    },
-                    error: function (jqXHR, textStatus, errorThrown)
-                    {
-                    	alert("error");
-                    }
-                });
-
+                        orbitList = getOrbitList();
+                        instrList = getInstrumentList();  
+                        for(var i=0;i<orbitList.length;i++){
+                                relabeledOrbitList.push(relabel(orbitList[i]));
+                        }
+                        for(var i=0;i<instrList.length;i++){
+                                relabeledInstrList.push(relabel(instrList[i]));
+                        }
             }
             
             
 
-
-            
             function extractInfoFromBitString(bitString) {
                 var jsonObj_arch
                 $.ajax({
@@ -525,11 +488,11 @@ and open the template in the editor.
                 }
                 return bitString_string;
             }
-            function string2BooleanArray(bitString_string) {
+            function string2BooleanArray(booleanString) {
                 var bitString = [];
                 bitString.length = 0;
-                for (var i = 0; i < bitString_string.length; i++) {
-                    if (bitString_string.charAt(i) == "0") {
+                for (var i = 0; i < booleanString.length; i++) {
+                    if (booleanString.charAt(i) == "0") {
                         bitString.push(true);
                     } else {
                         bitString.push(false);
@@ -687,13 +650,13 @@ and open the template in the editor.
             
             function numOfArchs(){
                 var leng1 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot]").size();
-                var leng2 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_clicked]").size();
+                var leng2 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_highlighted]").size();
                 var leng3 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_DFhighlighted]").size();
                 var leng4 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_selected_DFhighlighted]").size();
                 return leng1+leng2+leng3+leng4;
             }
             function numOfSelectedArchs(){
-                var leng1 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_clicked]").size();
+                var leng1 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_highlighted]").size();
                 var leng2 = d3.select("[id=scatterPlotFigure]").select("svg").selectAll("[class=dot_selected_DFhighlighted]").size();
                 return leng1+leng2;
             }
@@ -710,7 +673,7 @@ and open the template in the editor.
 
 
             testType = "3";
-            newDataFromResultFile();
+            importNewData();
 
 
             } catch (err) {

@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
+import org.bson.Document;
 import jess.Defrule;
 import jess.Fact;
 import jess.Rete;
@@ -38,6 +39,8 @@ import rbsa.eoss.JessRuleAnalyzer;
 import rbsa.eoss.DBManagement;
 
 
+
+
 /**
  *
  * @author Bang
@@ -48,13 +51,14 @@ public class ResultsServlet extends HttpServlet {
     private static final long serialVersionUID = 1257649107469947355L;
 
     private Gson gson = new Gson();
-    ResultManager RM = ResultManager.getInstance();
     private static ResultsServlet instance=null;
 	ServletContext sctxt;
 	ServletConfig sconfig;
-    private int arch_id;
-    private rbsa.eoss.Result resu;
     
+    private DBManagement dbm = null;
+        
+        
+        
     /**
      *
      * @throws ServletException
@@ -62,9 +66,9 @@ public class ResultsServlet extends HttpServlet {
     @Override
     public void init() throws ServletException{ 
     	instance = this;
-    	
     	sctxt = this.getServletContext();
     	sconfig = this.getServletConfig();
+        dbm = new DBManagement();
     }
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
@@ -127,15 +131,30 @@ public class ResultsServlet extends HttpServlet {
             
         	
         	
-        if (requestID.equalsIgnoreCase("getNorb")){
-            int norb = Params.orbit_list.length;
-            outputString = Integer.toString(norb);
-        }
-        else if (requestID.equalsIgnoreCase("getNinstr")){
-            int ninstr = Params.instrument_list.length;
-            outputString = Integer.toString(ninstr);
-        }
 
+        if (requestID.equalsIgnoreCase("getInstrumentList")){
+            ArrayList<String> instrumentList = new ArrayList<>(); 
+            String[] instruments = Params.instrument_list;
+            for (String inst:instruments){
+                instrumentList.add(inst);
+            }
+            String jsonObj = gson.toJson(instrumentList);
+            outputString = jsonObj;
+
+        }
+        else if (requestID.equalsIgnoreCase("getOrbitList")){
+            ArrayList<String> orbitList = new ArrayList<>(); 
+            String[] orbits = Params.orbit_list;
+            for (String orb:orbits){
+                orbitList.add(orb);
+            }
+            String jsonObj = gson.toJson(orbitList);
+            outputString = jsonObj;
+
+        }        
+        
+        
+        
         else if (requestID.equalsIgnoreCase("extractInfoFromBitString")){
 
             String bitString_string = request.getParameter("bitString");
@@ -159,96 +178,35 @@ public class ResultsServlet extends HttpServlet {
             }
             String jsonObj = gson.toJson(architecture);
             outputString = jsonObj;
-
         }
         
-        
-        
-        
-        else if (requestID.equalsIgnoreCase("resultFileURL_newData")){
-            
-            DBManagement dbm = new DBManagement();
-            System.out.println(dbm.getNArchs());
-            
-            
-            
-            
-            
-            String resultPath = request.getParameter("filePath");
-            InputStream file = sctxt.getResourceAsStream(resultPath);
-            
-            ResultCollection RC = RM.loadResultCollectionFromInputStream(file);
-            Stack<Result> tmpResults = RC.getResults();
-            Stack<Result> results = new Stack<Result>();
-            for (Result tmpResult:tmpResults){
-                if(tmpResult.getScience()>=0.001){
-                    results.add(tmpResult);
-                }
-            }
-            int nResults = results.size();
-
+        else if (requestID.equalsIgnoreCase("import_new_data")){
+            ArrayList<org.bson.Document> docs = dbm.getMetadata();
             ArrayList<Architecture> archArray = new ArrayList<>();
-            this.arch_id=0;
-            
-            for (int i=0;i<nResults;i++){
-                double sci = results.get(i).getScience();
-                double cost = results.get(i).getCost();
-                boolean[] bitString = results.get(i).getArch().getBitString();
-                Architecture arch = new Architecture(this.arch_id,sci,cost,bitString);
-                this.arch_id++;
-                archArray.add(arch);
+            for(org.bson.Document doc:docs){
+                int id = (int) doc.get("ArchID");
+                double science = (double) doc.get("science");
+                double cost = (double) doc.get("cost");
+                String booleanString = (String) doc.get("bitString");
+                archArray.add(new Architecture(id,science,cost,booleanString));
             }
             String jsonObj = gson.toJson(archArray);
             outputString = jsonObj;
         }
-        
-        else if (requestID.equalsIgnoreCase("resultFileURL_addData")){
-            
-        	String resultPath = request.getParameter("filePath");
-        	InputStream file = sctxt.getResourceAsStream(resultPath);
-        	ResultCollection RC = RM.loadResultCollectionFromInputStream(file);
-        	
-            Stack<Result> newResults = RC.getResults();
-            int numNewResults = newResults.size();
-            ArrayList<Architecture> archArray = new ArrayList<>();
-            
-            for (int i=0;i<numNewResults;i++){
-                double sci = newResults.get(i).getScience();
-                double cost = newResults.get(i).getCost();
-                boolean[] bitString = newResults.get(i).getArch().getBitString();
-                Architecture arch = new Architecture(this.arch_id,sci,cost,bitString);
-                this.arch_id++;
-                archArray.add(arch);
-            }
-            String jsonObj = gson.toJson(archArray);
-            outputString = jsonObj;
+        else if (requestID.equalsIgnoreCase("resultFileURL_addData")){        	
         }
         
         
 
         
-        else if (requestID.equalsIgnoreCase("getInstrumentList")){
-            
-            ArrayList<String> instrumentList = new ArrayList<>(); 
-            String[] instruments = Params.instrument_list;
-            for (String inst:instruments){
-                instrumentList.add(inst);
-            }
-            String jsonObj = gson.toJson(instrumentList);
-            outputString = jsonObj;
 
-        }
-        else if (requestID.equalsIgnoreCase("getOrbitList")){
-            
-            ArrayList<String> orbitList = new ArrayList<>(); 
-            String[] orbits = Params.orbit_list;
-            for (String orb:orbits){
-                orbitList.add(orb);
-            }
-            String jsonObj = gson.toJson(orbitList);
-            outputString = jsonObj;
-
-        }
+        
+        
+        
+        
+        
+        
+        
         
         else if(requestID.equalsIgnoreCase("generateEmptyFilterArch")){
             
@@ -314,171 +272,171 @@ public class ResultsServlet extends HttpServlet {
         
         
         else if (requestID.equalsIgnoreCase("satisfactionScoreSummaryRequest")){
-            
-            String bitString = request.getParameter("bitString");
-            
-            System.out.println(bitString);
-            ArchWebInterface ai = ArchWebInterface.getInstance();
-            ai.initialize();
-                        
-            this.resu = ai.evaluateArch(bitString,1);
-                        
-            ai.initialize_aggregation_structure();
-            String bitString_string = request.getParameter("bitString");
-            int cnt = bitString_string.length();
-            
-            ArrayList<String> subobjs = ai.getSubobjectives();
-            ArrayList<String> objs = ai.getObjectives();
-            ArrayList<String> panels = ai.getPanels();
-            HashMap<String,String> objs_des = ai.getObjDescriptions();
-            HashMap<String,String> subobjs_des = ai.getSubobjDescriptions();
-            HashMap<String,Double> objs_weights = ai.getObjWeights();
-            HashMap<String,Double> subobjs_weights = ai.getSubobjWeights();
-            
-            satisfactionScores value = new satisfactionScores("value");
-            value.setScore(resu.getScience());
-                        
-            for (int i=0;i<panels.size();i++){ // iterate over stakeholders
-                String panel = panels.get(i);
-                satisfactionScores stakeholder = new satisfactionScores("stakeholder",panel);
-                
-                double panelScore = 0;
-                int numOfObjs = 0;
-                
-                for (int j=0;j<objs.size();j++){  // iterate over objectives
-                    String obj = objs.get(j);
-                    if(!obj.contains(panel)) continue;
-                    satisfactionScores objective = new satisfactionScores("objective",obj);
-                    double objScore = 0;
-                    double numOfSubobjs = 0;
-                    
-                    for(int k=0;k<subobjs.size();k++){ // iterate over subobjectives
-                        String subobj = subobjs.get(k);
-                        if(!subobj.split("-")[0].equalsIgnoreCase(obj)) continue;
-                        double subobjScore = resu.getSubobjective_scores2().get(subobj);             
-                        satisfactionScores subobjective = new satisfactionScores("subobjective",subobj,subobjScore);
-                        subobjective.setDescription(subobjs_des.get(subobj));
-                        subobjective.setWeight(subobjs_weights.get(subobj));
-                        objective.addToChildren(subobjective);
-                        objScore = objScore + subobjScore;
-                        numOfSubobjs = numOfSubobjs+1;
-                    }
-                    objScore = objScore/numOfSubobjs;
-                    objective.setScore(objScore);
-                    objective.setDescription(objs_des.get(obj));
-                    objective.setWeight(objs_weights.get(obj));
-                    stakeholder.addToChildren(objective);
-                    
-                    panelScore = panelScore + objScore;
-                    numOfObjs = numOfObjs+1;
-                }
-                panelScore = panelScore/numOfObjs;
-                stakeholder.setScore(panelScore);
-                value.addToChildren(stakeholder);
-            }
-            String jsonObj = gson.toJson(value);
-            outputString = jsonObj;
-            System.out.println("Satisfaction score summary sent back");
+//            
+//            String bitString = request.getParameter("bitString");
+//            
+//            System.out.println(bitString);
+//            ArchWebInterface ai = ArchWebInterface.getInstance();
+//            ai.initialize();
+//                        
+//            this.resu = ai.evaluateArch(bitString,1);
+//                        
+//            ai.initialize_aggregation_structure();
+//            String bitString_string = request.getParameter("bitString");
+//            int cnt = bitString_string.length();
+//            
+//            ArrayList<String> subobjs = ai.getSubobjectives();
+//            ArrayList<String> objs = ai.getObjectives();
+//            ArrayList<String> panels = ai.getPanels();
+//            HashMap<String,String> objs_des = ai.getObjDescriptions();
+//            HashMap<String,String> subobjs_des = ai.getSubobjDescriptions();
+//            HashMap<String,Double> objs_weights = ai.getObjWeights();
+//            HashMap<String,Double> subobjs_weights = ai.getSubobjWeights();
+//            
+//            satisfactionScores value = new satisfactionScores("value");
+//            value.setScore(resu.getScience());
+//                        
+//            for (int i=0;i<panels.size();i++){ // iterate over stakeholders
+//                String panel = panels.get(i);
+//                satisfactionScores stakeholder = new satisfactionScores("stakeholder",panel);
+//                
+//                double panelScore = 0;
+//                int numOfObjs = 0;
+//                
+//                for (int j=0;j<objs.size();j++){  // iterate over objectives
+//                    String obj = objs.get(j);
+//                    if(!obj.contains(panel)) continue;
+//                    satisfactionScores objective = new satisfactionScores("objective",obj);
+//                    double objScore = 0;
+//                    double numOfSubobjs = 0;
+//                    
+//                    for(int k=0;k<subobjs.size();k++){ // iterate over subobjectives
+//                        String subobj = subobjs.get(k);
+//                        if(!subobj.split("-")[0].equalsIgnoreCase(obj)) continue;
+//                        double subobjScore = resu.getSubobjective_scores2().get(subobj);             
+//                        satisfactionScores subobjective = new satisfactionScores("subobjective",subobj,subobjScore);
+//                        subobjective.setDescription(subobjs_des.get(subobj));
+//                        subobjective.setWeight(subobjs_weights.get(subobj));
+//                        objective.addToChildren(subobjective);
+//                        objScore = objScore + subobjScore;
+//                        numOfSubobjs = numOfSubobjs+1;
+//                    }
+//                    objScore = objScore/numOfSubobjs;
+//                    objective.setScore(objScore);
+//                    objective.setDescription(objs_des.get(obj));
+//                    objective.setWeight(objs_weights.get(obj));
+//                    stakeholder.addToChildren(objective);
+//                    
+//                    panelScore = panelScore + objScore;
+//                    numOfObjs = numOfObjs+1;
+//                }
+//                panelScore = panelScore/numOfObjs;
+//                stakeholder.setScore(panelScore);
+//                value.addToChildren(stakeholder);
+//            }
+//            String jsonObj = gson.toJson(value);
+//            outputString = jsonObj;
+//            System.out.println("Satisfaction score summary sent back");
         }
        
         
         
         else if(requestID.equalsIgnoreCase("attributeScoreSummaryRequest")){ 
-            
-            String subobjID = request.getParameter("subobj");
-            QueryBuilder qb = this.resu.getQueryBuilder();
-            Rete r = this.resu.getRete();
-            ArrayList<Fact> subobj_facts = qb.makeQuery("AGGREGATION::SUBOBJECTIVE (id " + subobjID + ")");
-            
-            Defrule targetRule = new Defrule("","",r);
-            if ((Params.req_mode.equalsIgnoreCase("FUZZY-CASES")) || (Params.req_mode.equalsIgnoreCase("FUZZY-ATTRIBUTES"))) {  
-                targetRule = (Defrule) Params.rules_defrule_map.get("FUZZY-REQUIREMENTS::" + subobjID + "-attrib");         
-            }
-            else if ((Params.req_mode.equalsIgnoreCase("CRISP-CASES")) || (Params.req_mode.equalsIgnoreCase("CRISP-ATTRIBUTES"))) {     
-                targetRule = (Defrule) Params.rules_defrule_map.get("REQUIREMENTS::" + subobjID + "-attrib");
-            }       
 //            
-            JessRuleAnalyzer ra = new JessRuleAnalyzer(targetRule,r,qb);            
-            ActionAnalyzer aa = ra.getActionAnalyzer();
-            ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
-            
-            
-            ArrayList subobjectiveFacts = new ArrayList();
+//            String subobjID = request.getParameter("subobj");
+//            QueryBuilder qb = this.resu.getQueryBuilder();
+//            Rete r = this.resu.getRete();
+//            ArrayList<Fact> subobj_facts = qb.makeQuery("AGGREGATION::SUBOBJECTIVE (id " + subobjID + ")");
 //            
-            int nil_fact = 0;
-            for (int n = 0;n<subobj_facts.size();n++) {
-                Fact f = subobj_facts.get(n);
-                Double subobj_score = f.getSlotValue("satisfaction").floatValue(r.getGlobalContext());
-                String satisfied_by = f.getSlotValue("satisfied-by").stringValue(r.getGlobalContext());
-                if (satisfied_by.equalsIgnoreCase("nil")){
-                    nil_fact++;
-                    continue;
-                }
-                String factHistory = f.getSlotValue("factHistory").stringValue(r.getGlobalContext());
-                ValueVector attrList = f.getSlotValue("attributes").listValue(r.getGlobalContext());
-                ValueVector attrScoreList = f.getSlotValue("attrib-scores").listValue(r.getGlobalContext());
-                ValueVector attrReasonList = f.getSlotValue("reasons").listValue(r.getGlobalContext());
-                int attrSize = attrList.size();
-                String [] attrNames = new String[attrSize];
-                double [] attrScores = new double[attrSize];
-                String [] attrReasons = new String[attrSize];
-                
-                ArrayList<attributeScores> attributes = new ArrayList<>();
-                int cnt = 0;
-                String varName;
-                for (int i=0;i<attrSize;i++){
-                    attrNames[i] = attrList.get(i).stringValue(r.getGlobalContext());
-                    attrScores[i] = attrScoreList.get(i).floatValue(r.getGlobalContext());
-                    attrReasons[i] = attrReasonList.get(i).stringValue(r.getGlobalContext());
-                    
-                    int attrID = i+1;
-                    if (attrID < attrList.size()-1){     
-                        varName = "?x" + (attrID);  
-                    } else if (attrID == attrList.size()-1){       
-                        cnt++;
-                        varName = "?dc";   
-                        continue;
-                    } else {                         
-                        varName = "?pc";
-                        cnt++;
-                        continue;
-                    } 
-                    String action = ra.getActionContainingDesiredExpression("bind " + varName);
-                    String thresholds = aa.getInsideParen(action, 4).split(" ",2)[1];
-                    String refScores = aa.getInsideParen(aa.getInsideParen(action, 2),2,1).split(" ",2)[1];
-                    String testVar = aa.getInsideParen(action, 3).split(" ", 3)[1];
-                    String testSlot = cea.getVariableSlotPair(cea.getPattern(0)).get(testVar);
-                    String parameter = cea.getSlotVariablePair(cea.getPattern(0)).get("Parameter");
-                    ArrayList<Fact> capabilities = qb.makeQuery("REQUIREMENTS::Measurement (Parameter "+ Params.subobj_measurement_params.get(subobjID) +")");
-                    Fact matchingCapability = capabilities.get(0);
-                    for (Fact capa:capabilities){
-                        int currentFactID = capa.getFactId();
-                        if (factHistory.contains("A"+currentFactID)){
-                            matchingCapability = capa;
-                            break;
-                        }
-                    }
-                    String actualVal = matchingCapability.getSlotValue(testSlot).stringValue(r.getGlobalContext());
-                    attributeScores attr = new attributeScores(attrNames[i],attrScores[i],thresholds,refScores);
-                    attr.setActualValue(actualVal);
-                    attr.setInstrument(satisfied_by);
-                    attributes.add(attr);
-                    
-                }
-                
-                if (cnt==attrSize){
-                    System.out.println("No attribute other than dc & pc");
-                }
-                
-                subobjectiveFacts.add(attributes);
-            }
-            
-            if (subobj_facts.size()==nil_fact){
-                System.out.println("Facts not found");
-            }
-            
-            String jsonObj = gson.toJson(subobjectiveFacts);
-            outputString = jsonObj;
+//            Defrule targetRule = new Defrule("","",r);
+//            if ((Params.req_mode.equalsIgnoreCase("FUZZY-CASES")) || (Params.req_mode.equalsIgnoreCase("FUZZY-ATTRIBUTES"))) {  
+//                targetRule = (Defrule) Params.rules_defrule_map.get("FUZZY-REQUIREMENTS::" + subobjID + "-attrib");         
+//            }
+//            else if ((Params.req_mode.equalsIgnoreCase("CRISP-CASES")) || (Params.req_mode.equalsIgnoreCase("CRISP-ATTRIBUTES"))) {     
+//                targetRule = (Defrule) Params.rules_defrule_map.get("REQUIREMENTS::" + subobjID + "-attrib");
+//            }       
+////            
+//            JessRuleAnalyzer ra = new JessRuleAnalyzer(targetRule,r,qb);            
+//            ActionAnalyzer aa = ra.getActionAnalyzer();
+//            ConditionalElementAnalyzer cea = ra.getConditionalElementAnalyzer();
+//            
+//            
+//            ArrayList subobjectiveFacts = new ArrayList();
+////            
+//            int nil_fact = 0;
+//            for (int n = 0;n<subobj_facts.size();n++) {
+//                Fact f = subobj_facts.get(n);
+//                Double subobj_score = f.getSlotValue("satisfaction").floatValue(r.getGlobalContext());
+//                String satisfied_by = f.getSlotValue("satisfied-by").stringValue(r.getGlobalContext());
+//                if (satisfied_by.equalsIgnoreCase("nil")){
+//                    nil_fact++;
+//                    continue;
+//                }
+//                String factHistory = f.getSlotValue("factHistory").stringValue(r.getGlobalContext());
+//                ValueVector attrList = f.getSlotValue("attributes").listValue(r.getGlobalContext());
+//                ValueVector attrScoreList = f.getSlotValue("attrib-scores").listValue(r.getGlobalContext());
+//                ValueVector attrReasonList = f.getSlotValue("reasons").listValue(r.getGlobalContext());
+//                int attrSize = attrList.size();
+//                String [] attrNames = new String[attrSize];
+//                double [] attrScores = new double[attrSize];
+//                String [] attrReasons = new String[attrSize];
+//                
+//                ArrayList<attributeScores> attributes = new ArrayList<>();
+//                int cnt = 0;
+//                String varName;
+//                for (int i=0;i<attrSize;i++){
+//                    attrNames[i] = attrList.get(i).stringValue(r.getGlobalContext());
+//                    attrScores[i] = attrScoreList.get(i).floatValue(r.getGlobalContext());
+//                    attrReasons[i] = attrReasonList.get(i).stringValue(r.getGlobalContext());
+//                    
+//                    int attrID = i+1;
+//                    if (attrID < attrList.size()-1){     
+//                        varName = "?x" + (attrID);  
+//                    } else if (attrID == attrList.size()-1){       
+//                        cnt++;
+//                        varName = "?dc";   
+//                        continue;
+//                    } else {                         
+//                        varName = "?pc";
+//                        cnt++;
+//                        continue;
+//                    } 
+//                    String action = ra.getActionContainingDesiredExpression("bind " + varName);
+//                    String thresholds = aa.getInsideParen(action, 4).split(" ",2)[1];
+//                    String refScores = aa.getInsideParen(aa.getInsideParen(action, 2),2,1).split(" ",2)[1];
+//                    String testVar = aa.getInsideParen(action, 3).split(" ", 3)[1];
+//                    String testSlot = cea.getVariableSlotPair(cea.getPattern(0)).get(testVar);
+//                    String parameter = cea.getSlotVariablePair(cea.getPattern(0)).get("Parameter");
+//                    ArrayList<Fact> capabilities = qb.makeQuery("REQUIREMENTS::Measurement (Parameter "+ Params.subobj_measurement_params.get(subobjID) +")");
+//                    Fact matchingCapability = capabilities.get(0);
+//                    for (Fact capa:capabilities){
+//                        int currentFactID = capa.getFactId();
+//                        if (factHistory.contains("A"+currentFactID)){
+//                            matchingCapability = capa;
+//                            break;
+//                        }
+//                    }
+//                    String actualVal = matchingCapability.getSlotValue(testSlot).stringValue(r.getGlobalContext());
+//                    attributeScores attr = new attributeScores(attrNames[i],attrScores[i],thresholds,refScores);
+//                    attr.setActualValue(actualVal);
+//                    attr.setInstrument(satisfied_by);
+//                    attributes.add(attr);
+//                    
+//                }
+//                
+//                if (cnt==attrSize){
+//                    System.out.println("No attribute other than dc & pc");
+//                }
+//                
+//                subobjectiveFacts.add(attributes);
+//            }
+//            
+//            if (subobj_facts.size()==nil_fact){
+//                System.out.println("Facts not found");
+//            }
+//            
+//            String jsonObj = gson.toJson(subobjectiveFacts);
+//            outputString = jsonObj;
             
         }
              
@@ -519,9 +477,13 @@ public class ResultsServlet extends HttpServlet {
         return "Short description";
     }// </editor-fold>
     
-    public rbsa.eoss.Result getResult(){
-        return this.resu;
-    }
+
+    
+    
+    
+    
+    
+    
     
     
     public int[][] bitString2IntMat(String bitString){
@@ -602,17 +564,16 @@ public class ResultsServlet extends HttpServlet {
     
     
     class Architecture{
-        private int id;
-        private boolean[] bitString;
+        private int ArchID;
+        private String bitString;
         private double science;
         private double cost;
-        private String status;
         
         public Architecture(){
         }
         
-        public Architecture(int id, double science,double cost, boolean[] bitString){
-            this.id = id;
+        public Architecture(int id, double science,double cost, String bitString){
+            this.ArchID = id;
             this.science = science;
             this.cost = cost;
             this.bitString = bitString;

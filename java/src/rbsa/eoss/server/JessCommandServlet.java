@@ -110,48 +110,48 @@ public class JessCommandServlet extends HttpServlet {
         String outputString = "";
 
         if (request.getParameter("ID").equalsIgnoreCase("factHistoryFigureRequest")){
-            
-            this.resu = ResultsServlet.getInstance().getResult();
-            
-            Rete r = this.resu.getRete();
-            QueryBuilder qb = this.resu.getQueryBuilder();
-            
-            String subobj = request.getParameter("subobj");
-            String factID_String = request.getParameter("factID");
-            ArrayList<Fact> facts_test = qb.makeQuery("AGGREGATION::SUBOBJECTIVE");            
-            String factHistory = "";
-            String factName = "";
-            String jsonObj = "";
-            try{
-                Fact f;
-                int factID;
-                
-                if(!subobj.isEmpty()){
-                    ArrayList<Fact> facts = qb.makeQuery("AGGREGATION::SUBOBJECTIVE (id "+ subobj +")");
-                    double max_sat = -1;
-                    f = facts.get(0);
-                    for(int i=0;i<facts.size();i++){
-                        double temp = facts.get(i).getSlotValue("satisfaction").floatValue(r.getGlobalContext());
-                        if(temp >= max_sat){
-                            f = facts.get(i);
-                        }
-                    }
-                    factID = f.getFactId();
-                }else{
-                    factID = Integer.parseInt(factID_String);
-                    f = r.findFactByID(factID);
-                }
-
-                Fact RequestedFact = f;
-                factHistory = RequestedFact.getSlotValue("factHistory").stringValue(r.getGlobalContext());                
-                factName = RequestedFact.getName();
-                factAndRuleNode farn = new factAndRuleNode(factID,factHistory);
-                jsonObj = gson.toJson(farn);
-                
-            }catch(Exception e){
-                System.out.println(e.getMessage());
-            }
-            outputString = jsonObj;
+//            
+//            this.resu = ResultsServlet.getInstance().getResult();
+//            
+//            Rete r = this.resu.getRete();
+//            QueryBuilder qb = this.resu.getQueryBuilder();
+//            
+//            String subobj = request.getParameter("subobj");
+//            String factID_String = request.getParameter("factID");
+//            ArrayList<Fact> facts_test = qb.makeQuery("AGGREGATION::SUBOBJECTIVE");            
+//            String factHistory = "";
+//            String factName = "";
+//            String jsonObj = "";
+//            try{
+//                Fact f;
+//                int factID;
+//                
+//                if(!subobj.isEmpty()){
+//                    ArrayList<Fact> facts = qb.makeQuery("AGGREGATION::SUBOBJECTIVE (id "+ subobj +")");
+//                    double max_sat = -1;
+//                    f = facts.get(0);
+//                    for(int i=0;i<facts.size();i++){
+//                        double temp = facts.get(i).getSlotValue("satisfaction").floatValue(r.getGlobalContext());
+//                        if(temp >= max_sat){
+//                            f = facts.get(i);
+//                        }
+//                    }
+//                    factID = f.getFactId();
+//                }else{
+//                    factID = Integer.parseInt(factID_String);
+//                    f = r.findFactByID(factID);
+//                }
+//
+//                Fact RequestedFact = f;
+//                factHistory = RequestedFact.getSlotValue("factHistory").stringValue(r.getGlobalContext());                
+//                factName = RequestedFact.getName();
+//                factAndRuleNode farn = new factAndRuleNode(factID,factHistory);
+//                jsonObj = gson.toJson(farn);
+//                
+//            }catch(Exception e){
+//                System.out.println(e.getMessage());
+//            }
+//            outputString = jsonObj;
         }
 
         
