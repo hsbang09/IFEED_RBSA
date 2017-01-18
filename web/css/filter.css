@@ -1,0 +1,112 @@
+/*
+
+
+#filter_options (div)
+    .filter_options_dropdown_1 (select)
+    .filter_options_dropdown_2 (select)
+    .filter_options_dropdown_3 (select)
+    .filter_options_dropdown_4 (select)
+#filter_inputs (div)
+    #filter_inputs_div_1 (div)
+        .filter_inputs_select
+        .filter_inputs_textbox
+    #filter_inputs_div_2 (div)
+        .filter_inputs_select
+        .filter_inputs_textbox
+    #filter_inputs_div_3 (div)
+        .filter_inputs_textbox
+        
+#filter_hints (div)
+    #filter_hints_div_1 (div)
+    #filter_hints_div_2 (div)
+#filter_buttons (div)
+    .filter_options_button (button)
+    
+    
+*/
+    
+
+
+
+
+#filter_title {
+    width: 90%;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    margin-left: 2px;
+    float: left;
+    font-size: 18px;
+}
+
+
+#filter_options{
+    width: 100%;
+    float: left;
+}
+#filter_inputs{
+    width:100%;
+    float:left;
+    margin-top:10px;
+}
+#filter_hints{
+    width:100%;
+    float:left;
+    margin-top: 10px;
+}
+#filter_buttons{
+    width:100%;
+    float:left;
+    margin-top: 15px;
+}
+
+
+.filter_options_dropdown{
+    width: 200px;
+    float:left;
+    height:24px;
+    margin-left: 3px;
+}
+
+
+.filter_options_button{
+    margin-left:6px;
+    float:left;
+}
+
+
+
+
+.filter_inputs_div{
+    width:95%;
+    float:left;
+    margin-left: 2px;
+    margin-top: 8px;
+}
+
+.filter_inputs_textbox{
+    width:180px;
+    margin-left:5px;
+    margin-right:2px;
+    margin-top: 10px;
+}
+
+
+.filter_hints_div{
+    margin-top: 15px;
+    margin-left: 10px;
+    color: #696969;    
+}
+
+
+
+
+#filter_expression{
+    color: black;
+    border: 1px black solid;
+    height: 60px;
+    width: 80%;
+    float: left;
+    margin-left: 5px;
+    overflow:scroll;
+}
+            

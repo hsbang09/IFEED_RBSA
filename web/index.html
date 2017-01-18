@@ -12,9 +12,11 @@ and open the template in the editor.
 
         <script src="js/lib/jquery.js" type="text/javascript"></script>
         <script src="js/lib/d3.js"></script>
-	   <script src="js/lib/tabcontent.js" type="text/javascript"></script>
-	   <link href="js/lib/tabcontent.css" rel="stylesheet" type="text/css"/>
-	   
+        <script src="js/lib/tabcontent.js" type="text/javascript"></script>
+        <link href="js/lib/tabcontent.css" rel="stylesheet" type="text/css"/>
+        <link href="css/filter.css" rel="stylesheet" type="text/css"/>
+        
+        
        <script src="https://apis.google.com/js/platform.js" async defer></script>
        <meta name="google-signin-client_id" content="564804694787-lnsp9md3u0q8086nftbamu43drid6d4t.apps.googleusercontent.com">
 
@@ -119,43 +121,7 @@ and open the template in the editor.
             }
 
 
-            #filter_inputs{
-                width:95%;
-                float:left;
-                margin-left: 2px;
-                margin-top: 8px;
-            }
-            
-            #filter_input1_textBox{
-                width:180px;
-                margin-left:5px;
-                margin-right:2px;
-                margin-top: 10px;
-                margin-bottom:10px;
-            }
-            #filter_input2_textBox{
-                width:180px;
-                margin-left:5px;
-                margin-right:2px;
-                margin-top: 10px;
-            }
-            #filter_input3_textBox{
-                width:180px;
-                margin-left:5px;
-                margin-right:2px;
-                margin-top: 10px;
-            }
-            
-            #filter_expression{
-                color: black;
-                border: 1px black solid;
-                height: 60px;
-                width: 80%;
-                float: left;
-                margin-left: 5px;
-                overflow:scroll;
-            }
-            
+
 
 			
 			.smalltext{
@@ -337,7 +303,7 @@ and open the template in the editor.
        <script src="js/userDefinedFilter.js" type="text/javascript"></script>
        <script src="js/relabel.js" type="text/javascript"></script>
        <script src="js/satisfactionScoreSummary.js" type="text/javascript"></script>
-
+       <script src="js/filter.js" type="text/javascript"></script>
 
        
        
@@ -378,14 +344,14 @@ and open the template in the editor.
                     yValue, yScale, yMap, yAxis;
                	
             // Driving features variables
-            
-			var sortedDFs=null;
+                var sortedDFs=null;
            	var support_threshold = 0.015;
            	var confidence_threshold = 0.3;
            	var lift_threshold = 1;
             	
-           	// Filter option variables
-            var filterDropdownOptions = [{value:"not_selected",text:"Preset Filters"},{value:"paretoFront",text:"Pareto front"},
+            // Filter option variables
+            
+            var preset_filter_options = [{value:"not_selected",text:"Select preset filters"},
                 {value:"present",text:"Present"},{value:"absent",text:"Absent"},{value:"inOrbit",text:"In orbit"},
                 {value:"notInOrbit",text:"Not in orbit"},{value:"together",text:"Together"},
                 {value:"togetherInOrbit",text:"Together in orbit"},{value:"separate",text:"Separate"},
@@ -396,6 +362,11 @@ and open the template in the editor.
             var userDefFilterExpressionHistory = [];
             userDefFilterExpressionHistory.length=0;
             var userDefFilters = [];
+            
+            var filter_options_dropdown_indentation = 10;
+            var filter_options_dropdown_current_level = 1;
+            
+            
             
             // Classification Tree variables
             

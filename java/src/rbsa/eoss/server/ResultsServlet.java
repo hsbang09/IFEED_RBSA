@@ -198,27 +198,40 @@ public class ResultsServlet extends HttpServlet {
         
         
 
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        else if(requestID.equalsIgnoreCase("generateEmptyFilterArch")){
-            
-            int norb = Params.orbit_list.length;
-            int ninstr = Params.instrument_list.length;
-            String filterArch = "";
-            
-            for (int i=0;i<(norb+2)*ninstr;i++){
-                filterArch = filterArch + "0";
-            }
-            outputString = filterArch;
+        else if(requestID.equalsIgnoreCase("get_slotNames")){
+            String collectionName = request.getParameter("CollectionName");
+            ArrayList<String> slotNames = dbm.getSlotNames(collectionName,"fast");
+            String jsonObj = gson.toJson(slotNames);
+            outputString = jsonObj;
         }
+        else if(requestID.equalsIgnoreCase("get_minmax_value")){
+            String collectionName = request.getParameter("CollectionName");
+            String slotName = request.getParameter("SlotName");
+            String[] min_max = dbm.getMinMaxValue(collectionName, slotName);
+            String jsonObj = gson.toJson(min_max);
+            outputString = jsonObj;
+        }
+        else if(requestID.equalsIgnoreCase("get_class_of_slot")){
+            String collectionName = request.getParameter("CollectionName");
+            String slotName = request.getParameter("SlotName");
+            String slotClass = dbm.getClassOfSlot(collectionName, slotName);
+            outputString = slotClass;
+        }
+        else if(requestID.equalsIgnoreCase("get_valid_value_list")){
+            String collectionName = request.getParameter("CollectionName");
+            String slotName = request.getParameter("SlotName");
+            ArrayList<String> list = dbm.getValidValueList(collectionName, slotName);
+            String jsonObj = gson.toJson(list);
+            outputString = jsonObj;
+        }
+        
+        
+        
+        
+        
+        
+        
+        
 
         else if (requestID.equalsIgnoreCase("modifyBitString")){
             String bitString = request.getParameter("bitString");
@@ -254,6 +267,15 @@ public class ResultsServlet extends HttpServlet {
             outputString = modifiedBitString;
         }
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
         else if (requestID.equalsIgnoreCase("evalNewArch")){
             String bitString = request.getParameter("bitString");
             
@@ -267,6 +289,13 @@ public class ResultsServlet extends HttpServlet {
 //            outputString = jsonObj;
 
         }
+        
+        
+        
+        
+        
+        
+        
         
         
         

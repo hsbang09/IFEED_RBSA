@@ -301,32 +301,10 @@ public class DBManagement {
     
     
     
-    
-    public void makeQuery(){
-        
-//        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-//        MongoCollection col = Mdb.getCollection("science.MANIFEST.Mission");
-//        FindIterable found = col.find(
-//                and(
-//                    eq("factName","MANIFEST::Mission"),
-//                    gte("fraction-sunlight",0.7)
-//                ));
-//        
-////        Example:
-////        col.find(and(gte("stars", 2), lt("stars", 5), eq("categories", "Bakery")));
-//
-//        found.projection(fields(
-//                    include("factName","factID","module","fraction-sunlight"),
-//                    exclude("_id")
-//                ));
-//        MongoCursor iter = found.iterator();
-//        while(iter.hasNext()){
-//            Document doc = (Document) iter.next();
-//            System.out.println(doc.get("fraction-sunlight").getClass().toString());
-//            System.out.println(doc.toString());
-//        }
-    }    
-    
+    /**
+     * Returns the number of documents encoded in the metadata
+     * @return 
+     */
     
     public double getNArchs(){
         MongoDatabase Mdb = mongoClient.getDatabase(dbName);
@@ -334,7 +312,11 @@ public class DBManagement {
         return col.count();
     }
     
-    
+    /**
+     * Checks if the dataset contains the data related to a specific architecture defined by a boolean string
+     * @param booleanString
+     * @return 
+     */
     public boolean findMatchingArch(String booleanString){
         MongoDatabase Mdb = mongoClient.getDatabase(dbName);
         
@@ -349,6 +331,13 @@ public class DBManagement {
         return false;
     }
     
+    /**
+     * Checks if there is a document whose slot value matches with a certain string input
+     * @param collectionName: Name of the collection
+     * @param slotName: Slot Name
+     * @param value: Value to compare with the actual slot value
+     * @return 
+     */
     public boolean QueryExists(String collectionName, String slotName, String value){
         MongoDatabase Mdb = mongoClient.getDatabase(dbName);
         MongoCollection col = Mdb.getCollection(collectionName);
@@ -358,7 +347,10 @@ public class DBManagement {
         return iter.hasNext();    
     }
     
-    
+    /**
+     * Finds and returns all bson documents in the metadata collection
+     * @return 
+     */
     public ArrayList<org.bson.Document> getMetadata(){
         ArrayList<org.bson.Document> docs = new ArrayList<>();
         MongoDatabase Mdb = mongoClient.getDatabase(dbName);
@@ -370,6 +362,121 @@ public class DBManagement {
             docs.add(doc);
         }
         return docs;
+    }
+    
+    
+    
+    /**
+     * Returns a String array, containing the minimum value, the maximum value, and the class information of a given slot
+     * @param collectionName: Name of a collection
+     * @param slotName: Name of a slot
+     * @return Returns a string array of length 3. The first element is the minimum value stored in String.
+     *          The second element is the maximum value stored in String. The third element is the name of the class.
+     *          The class can be either java.lang.Double or java.lang.Integer.
+     */
+    public String[] getMinMaxValue(String collectionName,String slotName){        
+        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
+        MongoCollection col = Mdb.getCollection(collectionName);
+        FindIterable found = col.find();
+        MongoCursor iter = found.iterator();
+        if(!iter.hasNext()){
+            System.out.println("Warning: The collection is empty (Check the collection name)");
+            return new String[3];
+        }
+        org.bson.Document tempdoc = (Document) iter.next();
+        String cl = tempdoc.get(slotName).getClass().toString(); 
+        if(cl.contains("String")){
+            System.out.println("Warning: The given slot is a String");
+            return new String[3];
+        }
+        double min = 9999999;
+        double max = -9999999;
+        while(iter.hasNext()){
+            org.bson.Document doc = (Document) iter.next();
+            double val = (double) doc.get(slotName);
+            if(val > max){
+                max = val;
+            }
+            if(val < min){
+                min = val;
+            }
+        }
+        String[] min_max_class = new String[3];
+        min_max_class[0] = Double.toString(min);
+        min_max_class[1] = Double.toString(max);
+        min_max_class[2] = cl;
+        return min_max_class;
+    }
+        
+    
+    /**
+     * Returns a String specifying what the class of a requested slot is
+     * @param collectionName: Name of a collection
+     * @param slotName: Name of a slot
+     * @return 
+     */
+    public String getClassOfSlot(String collectionName, String slotName){
+        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
+        MongoCollection col = Mdb.getCollection(collectionName);
+        FindIterable found = col.find();
+        MongoCursor iter = found.iterator();
+        org.bson.Document doc = (org.bson.Document) iter.next();
+        return doc.get(slotName).getClass().toString();
+    }  
+    
+    
+    
+    public ArrayList<String> getValidValueList(String collectionName,String slotName){        
+        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
+        MongoCollection col = Mdb.getCollection(collectionName);
+        FindIterable found = col.find();
+        MongoCursor iter = found.iterator();
+        ArrayList<String> list = new ArrayList<>();
+        while(iter.hasNext()){
+            org.bson.Document doc = (Document) iter.next();
+            String val = doc.get(slotName, String.class);
+            if(!list.contains(val)){
+                list.add(val);
+            }
+        }
+        return list;
+    }
+ 
+    
+    /**
+     * Returns names of all the slots for a given collection. 
+     * @param collectionName: Name of a collection in the database
+     * @param mode: 'slow' mode will go over all documents to gather the slot names (useful when the slot names vary across documents)
+     *              'fast' mode will only check the first document to save the slot names
+     * @return 
+     */
+    public ArrayList<String> getSlotNames(String collectionName, String mode){
+        ArrayList<String> slotNames = new ArrayList<>();
+        
+        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
+        MongoCollection col = Mdb.getCollection(collectionName);
+        FindIterable found = col.find();
+        MongoCursor iter = found.iterator();
+        if(!iter.hasNext()){
+            System.out.println("Warning: The collection is empty (Check the collection name)");
+            return slotNames;
+        }
+        if (mode.equalsIgnoreCase("slow")){
+            while(iter.hasNext()){
+                org.bson.Document doc = (Document) iter.next();
+                for(String key:doc.keySet()){
+                    if(slotNames.contains(key)){continue;}
+                    else{slotNames.add(key);}
+                }
+            }
+        }
+        else{
+            org.bson.Document doc = (Document) iter.next();
+            for(String key:doc.keySet()){
+                slotNames.add(key);
+            }
+        }
+        return slotNames;
     }
     
     
