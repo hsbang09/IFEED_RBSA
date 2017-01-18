@@ -8,8 +8,10 @@
     .filter_options_dropdown_4 (select)
 #filter_inputs (div)
     #filter_inputs_div_1 (div)
-        .filter_inputs_select
-        .filter_inputs_textbox
+        div
+            .filter_inputs_select
+            .filter_inputs_textbox
+            div
     #filter_inputs_div_2 (div)
         .filter_inputs_select
         .filter_inputs_textbox
@@ -46,7 +48,7 @@
 #filter_inputs{
     width:100%;
     float:left;
-    margin-top:10px;
+    margin-top:15px;
 }
 #filter_hints{
     width:100%;
@@ -82,12 +84,21 @@
     margin-left: 2px;
     margin-top: 8px;
 }
+#filter_inputs_div_1 select{
+    float:left;
+}
+#filter_inputs_div_1 input{
+    float:left;
+}
+#filter_inputs_div_1 div{
+    float:left;
+    margin-right: 5px;
+}
 
 .filter_inputs_textbox{
     width:180px;
-    margin-left:5px;
-    margin-right:2px;
-    margin-top: 10px;
+    margin-left:7px;
+    margin-right:7px;
 }
 
 

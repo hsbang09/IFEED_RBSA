@@ -86,6 +86,8 @@ function remove_filter_option_inputs(level){
     d3.selectAll('.filter_inputs_div').remove(); 
     d3.selectAll('.filter_hints_div').remove();
     
+    d3.select('#filter_options_dropdown_4').remove();
+    if(level==3){return;}
     d3.select('#filter_options_dropdown_3').remove();
     if(level==2){return;}        
     d3.select('#filter_options_dropdown_2').remove();
@@ -104,8 +106,7 @@ function filter_options_dropdown_1_changed(){
     var filterDropdownMenu = d3.select('#filter_options')
             .append('select')
             .attr('id','filter_options_dropdown_2')
-            .attr('class','filter_options_dropdown')
-            .style('margin-left',filter_options_dropdown_indentation);
+            .attr('class','filter_options_dropdown');
 
     if(selectedScope==="design_input"){
         filterDropdownMenu.selectAll("option")
@@ -550,7 +551,11 @@ function filter_options_dropdown_objectives(){
 
         d3.select("#filter_options_dropdown_3").on("change",function(d){
             var slot = d3.select('#filter_options_dropdown_3')[0][0].value;
-            if(slot==="not_selected"){return;}
+            if(slot==="not_selected"){
+                d3.selectAll('.filter_inputs_div').remove();
+                d3.selectAll('.filter_hints_div').remove();
+                return;
+            }
             filter_options_dropdown_attribute(collectionName,slot);
         });
     }
@@ -559,8 +564,9 @@ function filter_options_dropdown_objectives(){
 
 
 function filter_options_dropdown_science(){
-    var scope = d3.select('#filter_options_dropdown_3')[0][0].value;
     
+    remove_filter_option_inputs(3);
+    var scope = d3.select('#filter_options_dropdown_3')[0][0].value;
     var collectionName;
     
     if(scope==="not_selected"){
@@ -587,7 +593,11 @@ function filter_options_dropdown_science(){
 
     d3.select("#filter_options_dropdown_4").on("change",function(d){
         var slot = d3.select('#filter_options_dropdown_4')[0][0].value;
-        if(slot==="not_selected"){return;}
+        if(slot==="not_selected"){
+            d3.selectAll('.filter_inputs_div').remove();
+            d3.selectAll('.filter_hints_div').remove();
+            return;
+        }
         filter_options_dropdown_attribute(collectionName,slot);
     });
     
@@ -713,9 +723,12 @@ function filter_input_String(collectionName, slotName){
             .append("div")
             .attr("id","filter_inputs_div_1")
             .attr('class','filter_inputs_div')
-            .text("Select all designs that contain")
+            .append('div')
+            .text("Select all designs that contain ");
+    
+    d3.select('#filter_inputs_div_1')
             .append('select')
-            .append('class','filter_inputs_select');
+            .attr('class','filter_inputs_select');
             
     d3.select('#filter_inputs_div_1')
             .select('select')
@@ -745,7 +758,7 @@ function filter_input_String(collectionName, slotName){
             .attr('class','filter_inputs_div')
             .text("which have slot values that are ")
             .append('select')
-            .append('class','filter_inputs_select');
+            .attr('class','filter_inputs_select');
             
     d3.select('#filter_inputs_div_2')
             .select('select')
@@ -764,7 +777,7 @@ function filter_input_String(collectionName, slotName){
             .append("div")
             .attr("id","filter_inputs_div_3")
             .attr('class','filter_inputs_div')
-            .text("Or includes substring ")
+            .text("Or include a substring ")
             .append("input")
             .attr("class","filter_inputs_textbox")  
             .attr("type","text");  
@@ -789,9 +802,12 @@ function filter_input_Double(collectionName,slotName){
             .append("div")
             .attr("id","filter_inputs_div_1")
             .attr('class','filter_inputs_div')
-            .text("Select all designs that contain")
+            .append('div')
+            .text("Select all designs that contain ");
+    
+    d3.select('#filter_inputs_div_1')
             .append('select')
-            .append('class','filter_inputs_select');
+            .attr('class','filter_inputs_select');
             
     d3.select('#filter_inputs_div_1')
             .select('select')
@@ -822,7 +838,7 @@ function filter_input_Double(collectionName,slotName){
             .attr('class','filter_inputs_div')
             .text("which have slot values that are ")
             .append('select')
-            .append('class','filter_inputs_select');
+            .attr('class','filter_inputs_select');
     d3.select('#filter_inputs_div_2')
             .select('select')
             .selectAll("option")

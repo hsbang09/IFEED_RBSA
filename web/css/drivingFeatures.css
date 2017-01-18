@@ -1,0 +1,56 @@
+/* 
+    Created on : Jan 18, 2017, 1:19:18 PM
+    Author     : bang
+*/
+
+
+/*
+
+#df_title (div)
+
+#df_explanation_div_1 (div)
+    .df_explanation (div)
+    
+#df_scope_selection_div (div)
+    #df_scope_selection_dropdown_1
+    #df_scope_selection_dropdown_2
+    #df_scope_selection_dropdown_3
+    
+#df_button_div (div)
+    (div)
+        #run_df_mining_button (button)
+#df_explanation_div_2 (div)
+    .df_explanation (div)
+*/
+
+#df_title{
+    width:100%;
+    float:left;
+    font-size: 22px;
+}
+.df_explanation_div{
+    width:100%;
+    margin-top: 10px;
+    float:left;
+}
+.df_explanation{
+    font-size: 18px;
+}
+#df_scope_selection_div{
+    width:100%;
+    margin-top:15px;
+    float:left;
+}
+#df_button_div{
+    width:100%;
+    float:left;
+    margin-top: 30px;
+}
+#df_button_div div{
+    width:300px;
+    margin:auto;
+}
+#run_df_mining_button{
+    width:300px;
+    font-size: 18px;
+}

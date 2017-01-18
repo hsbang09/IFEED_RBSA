@@ -10,59 +10,218 @@
 
 
 
-function runDataMining() {
-	
+function open_df_scope_selection(){
+    
     document.getElementById('tab3').click();
     highlight_basic_info_box()
     
-	if(selection_changed == false && sortedDFs != null){
-		display_drivingFeatures(sortedDFs,"lift");
-		if(testType=="3"){
-			display_classificationTree(jsonObj_tree);
-		}
-		return;
-	}
+    d3.select("#basicInfoBox_div").select("#view3").select("g").remove();
+    
+    var displayBox = d3.select("#basicInfoBox_div").select("#view3").append("g");
+    displayBox.append("div")
+            .attr("id","df_title")
+            .append("p")
+            .text("Data Mining");
+    displayBox.append('div')
+            .attr('id','df_explanation_div_1')
+            .attr('class','df_explanation_div');
+    displayBox.append('div')
+            .attr('id','df_scope_selection_div');
+    displayBox.append('div')
+            .attr('id','df_button_div');
+    displayBox.append('div')
+            .attr('id','df_explanation_div_2')
+            .attr('class','df_explantion_div');
+
+    var df_dropdown_selection = d3.select("#df_scope_selection_div")
+            .append("select")
+            .attr('id','df_scope_selection_dropdown_1')
+            .attr("class","df_scope_selection_dropdown");
+    
+    df_dropdown_selection.selectAll("option")
+            .data([{value:"not_selected",text:"Select the scope"},
+                        {value:"design_input",text:"Design Inputs"},{value:"objective",text:"Objectives"}])
+            .enter()
+            .append("option")
+            .attr("value",function(d){
+                return d.value;
+            })
+            .text(function(d){
+                return d.text;
+            }); 
+    d3.select('#df_scope_selection_dropdown_1').on("change",df_scope_selection_dropdown_1);
+
+    d3.select('#df_explanation_div_1')
+            .append('div')
+            .attr('class','df_explanation')
+            .text("To run data mining, select target solutions on the scatter plot. Then click the button below.");
+
+    
+}
+
+function df_scope_selection_dropdown_1(){
+    remove_df_scope_selection(1);
+    var selectedScope = d3.select('#df_scope_selection_dropdown_1')[0][0].value;
+
+    if(selectedScope==="not_selected"){return;}
+    if(selectedScope==="design_input"){
+        append_df_button('preset_filters');
+    }else if(selectedScope==="objective"){
+        
+        var dropdown = d3.select('#df_scope_selection_div')
+                .append('select')
+                .attr('id','df_scope_selection_dropdown_2')
+                .attr('class','df_scope_selection_dropdown');
+
+        dropdown.selectAll("option")
+                .data([{value:"not_selected",text:"Select objective"},
+                            {value:"science",text:"Science benefit score"},{value:"cost",text:"Life-cycle cost"}])
+                .enter()
+                .append("option")
+                .attr("value",function(d){
+                    return d.value;
+                })
+                .text(function(d){
+                    return d.text;
+                });     
+    }
+    d3.select("#df_scope_selection_dropdown_2").on("change",df_scope_selection_dropdown_objectives);
+}
+
+function remove_df_scope_selection(level){
+    d3.select('#df_button_div').select('div').remove(); 
+    if(level==3){return;}
+    d3.select('#df_scope_selection_dropdown_3').remove();
+    if(level==2){return;}        
+    d3.select('#df_scope_selection_dropdown_2').remove();
+    if(level==1){return;}
+}
+
+function append_df_button(scope){    
+    d3.select("#df_button_div")
+            .append('div')
+            .append("button")
+            .attr("id","run_df_mining_button")
+            .text("Run data mining");
+    d3.selectAll("#run_df_mining_button").on("click", function(d){
+        runDataMining(scope);
+    });    
+
+}
+
+function df_scope_selection_dropdown_objectives(){
+    remove_df_scope_selection(2);
+    var selectedOption = d3.select('#df_scope_selection_dropdown_2')[0][0].value;
+    
+    if(selectedOption==="not_selected"){return;}
+    if(selectedOption==="science"){ 
+        
+        var dropdown = d3.select('#df_scope_selection_div')
+            .append('select')
+            .attr('id','df_scope_selection_dropdown_3')
+            .attr('class','df_scope_selection_dropdown');
+        dropdown.selectAll("option")
+                .data([{value:"not_selected",text:"Select a scope"},
+                        {value:"mission",text:"Mission"},
+                        {value:"measurement",text:"Measurement"},
+                        {value:"capabilities",text:"Capabilities"},
+                        {value:"stakeholder",text:"Aggregation: stakeholder"},
+                        {value:"objective",text:"Aggregation: objective"},
+                        {value:"subobjective",text:"Aggregation: subobjective"}])
+                .enter()
+                .append("option")
+                .attr("value",function(d){
+                    return d.value;
+                })
+                .text(function(d){
+                    return d.text;
+                });     
+        d3.select("#df_scope_selection_dropdown_3").on("change",df_scope_selection_dropdown_science);
+        
+    }else if(selectedOption==="cost"){
+        append_df_button('cost.MANIFEST.Mission');
+    }
+}
+
+function df_scope_selection_dropdown_science(){
+    remove_df_scope_selection(3);
+    
+    var scope = d3.select('#filter_options_dropdown_3')[0][0].value;
+    var collectionName;
+    if(scope==="not_selected"){
+        return;
+    }else if(scope==="mission"){
+       collectionName = "science.MANIFEST.Mission";
+    }else if(scope==="measurement"){
+        collectionName = "science.REQUIREMENTS.Measurement";
+    }else if(scope==="capabilities"){
+        collectionName = "science.CAPABILITIES.Manifested_instrument";
+    }else if(scope==="stakeholder"){
+        collectionName = "science.AGGREGATION.STAKEHOLDER";
+    }else if(scope==="objective"){
+        collectionName = "science.AGGREGATION.OBJECTIVE";
+    }else if(scope==="subobjective"){
+        collectionName = "science.AGGREGATION.SUBOBJECTIVE";
+    }
+    append_df_button(collectionName);
+}
+
+
+
+function runDataMining(scope) {
+// scope can be 'preset_filers', or collectionName from the database
+    
+    if(selection_changed == false && sortedDFs != null){
+        display_drivingFeatures(sortedDFs,"lift");
+        display_classificationTree(jsonObj_tree);
+        return;
+    }
 	
-    var selectedArchs = d3.selectAll("[class=dot_clicked]");
+    var selectedArchs = d3.selectAll("[class=dot_highlighted]");
     var nonSelectedArchs = d3.selectAll("[class=dot]");
     var numOfSelectedArchs = selectedArchs.size();
     var numOfNonSelectedArchs = nonSelectedArchs.size();
     
     if (numOfSelectedArchs==0){
     	alert("First select target solutions!");
-    }else{
-
-        buttonClickCount_drivingFeatures += 1;
-        getDrivingFeatures_numOfArchs.push({numOfSelectedArchs,numOfNonSelectedArchs});
-        getDrivingFeatures_thresholds.push({supp:support_threshold,lift:lift_threshold,conf:confidence_threshold});
-        
-        
-        var selectedBitStrings = [];
-        var nonSelectedBitStrings = [];
-        selectedBitStrings.length = 0;
-        nonSelectedBitStrings.length=0;
-
-        for (var i = 0; i < numOfSelectedArchs; i++) {
-            var tmpBitString = booleanArray2String(selectedArchs[0][i].__data__.bitString);
-            selectedBitStrings.push(tmpBitString);
-        }
-        for (var i = 0; i < numOfNonSelectedArchs; i++) {
-            var tmpBitString = booleanArray2String(nonSelectedArchs[0][i].__data__.bitString);
-            nonSelectedBitStrings.push(tmpBitString);
-        }
-
-        sortedDFs = generateDrivingFeatures(selectedBitStrings,nonSelectedBitStrings,support_threshold,confidence_threshold,lift_threshold,userDefFilters,"lift");
-        if(testType=="3"){
-            jsonObj_tree = buildClassificationTree();
-        }
-        
-        display_drivingFeatures(sortedDFs,"lift");
-        if(testType=="3"){
-        	display_classificationTree(jsonObj_tree);
-        }
-        selection_changed = false;
-        
+        return;
     }
+
+    buttonClickCount_drivingFeatures += 1;
+    getDrivingFeatures_numOfArchs.push({numOfSelectedArchs,numOfNonSelectedArchs});
+    getDrivingFeatures_thresholds.push({supp:support_threshold,lift:lift_threshold,conf:confidence_threshold});
+
+
+    var selectedBitStrings = [];
+    var nonSelectedBitStrings = [];
+    selectedBitStrings.length = 0;
+    nonSelectedBitStrings.length=0;
+
+    for (var i = 0; i < numOfSelectedArchs; i++) {
+        selectedBitStrings.push(selectedArchs[0][i].__data__.bitString);
+    }
+    for (var i = 0; i < numOfNonSelectedArchs; i++) {
+        nonSelectedBitStrings.push(nonSelectedArchs[0][i].__data__.bitString);
+    }
+
+    sortedDFs = generateDrivingFeatures(selectedBitStrings,nonSelectedBitStrings,scope,
+                            support_threshold,confidence_threshold,lift_threshold,"lift");
+    
+    
+    
+    
+    
+    
+    
+    display_drivingFeatures(sortedDFs,"lift");
+    if(testType=="3"){
+        jsonObj_tree = buildClassificationTree();
+        display_classificationTree(jsonObj_tree);
+    }
+
+    selection_changed = false;
+
+
 }
 
 
@@ -73,17 +232,18 @@ function runDataMining() {
 
 
 
-function generateDrivingFeatures(selected,nonSelected,
+function generateDrivingFeatures(selected,nonSelected,scope,
 		support_threshold,confidence_threshold,lift_threshold,
-		userDefFilters,sortBy){
+		sortBy){
 	
-	var output;
+    var output;
     $.ajax({
         url: "DrivingFeatureServlet",
         type: "POST",
         data: {ID: "generateDrivingFeatures",selected: JSON.stringify(selected),nonSelected:JSON.stringify(nonSelected),
-        	supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,
-        	userDefFilters:JSON.stringify(userDefFilters),sortBy:sortBy},
+        	scope:scope,
+                supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,
+        	sortBy:sortBy},
         async: false,
         success: function (data, textStatus, jqXHR)
         {
@@ -512,7 +672,7 @@ function display_drivingFeatures(source,sortby) {
                     						.style("fill", "#F75082");
                 			}
                         });
-                        d3.selectAll("[class=dot_clicked]")[0].forEach(function (d) {
+                        d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
                         	var bitString = d.__data__.bitString;
                             var temp = presetFilter2(type_modified,bitString,filterInputs,false);
                             if(temp==null){
@@ -533,7 +693,7 @@ function display_drivingFeatures(source,sortby) {
                         						.style("fill", "#F75082");
                     			}
                             });
-                            d3.selectAll("[class=dot_clicked]")[0].forEach(function (d) {
+                            d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
                             	var bitString = d.__data__.bitString;
                         		if (applyUserDefFilterFromExpression(type_modified,bitString)){
                         			d3.select(d).attr("class", "dot_selected_DFhighlighted")
@@ -607,7 +767,7 @@ function display_drivingFeatures(source,sortby) {
                                 }
                             });     
                     d3.selectAll("[class=dot_selected_DFhighlighted]")
-                    		.attr("class", "dot_clicked")
+                    		.attr("class", "dot_highlighted")
                             .style("fill","#0040FF");    
 
                 });

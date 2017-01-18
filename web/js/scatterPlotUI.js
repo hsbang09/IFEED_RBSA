@@ -880,32 +880,10 @@ function initialize_tabs_inspection(){
 			.text("If you hover the mouse over a design, relevant information will be displayed here.");
 }
 function initialize_tabs_filter_options(){
-    openFilterOptions()
+    openFilterOptions();
 }
 function initialize_tabs_driving_features(){
-	
-	d3.select("[id=basicInfoBox_div]").select("[id=view3]").select("g").remove();
-	var guideline = d3.select("[id=basicInfoBox_div]").select("[id=view3]")
-			.append("g")
-			.append("div")
-			.style("width","900px")
-			.style("margin","auto")
-			
-	guideline.append("div")
-			.style("width","100%")
-			.style("font-size","21px")
-			.text("To run data mining, select target solutions on the scatter plot. Then click the button below.");
-
-	guideline.append("div")
-			.style("width","300px")
-			.style("margin","auto")
-			.append("button")
-			.attr("id","getDrivingFeaturesButton")
-			.style("margin-top","30px")
-			.style("width","200px")
-			.style("font-size","19px")
-			.text("Run data mining");
-	d3.selectAll("[id=getDrivingFeaturesButton]").on("click", runDataMining);
+    open_df_scope_selection();
 }
 
 function initialize_tabs_classification_tree(){

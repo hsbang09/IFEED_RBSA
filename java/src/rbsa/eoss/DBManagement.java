@@ -389,21 +389,43 @@ public class DBManagement {
             System.out.println("Warning: The given slot is a String");
             return new String[3];
         }
-        double min = 9999999;
-        double max = -9999999;
-        while(iter.hasNext()){
-            org.bson.Document doc = (Document) iter.next();
-            double val = (double) doc.get(slotName);
-            if(val > max){
-                max = val;
+        String minval="";
+        String maxval="";
+        if(cl.contains("Integer")){
+            int min = 9999999;
+            int max = -9999999;
+            while(iter.hasNext()){
+                org.bson.Document doc = (Document) iter.next();
+                int val = (int) doc.get(slotName);
+                if(val > max){
+                    max = val;
+                }
+                if(val < min){
+                    min = val;
+                }
             }
-            if(val < min){
-                min = val;
+            minval = Integer.toString(min);
+            maxval = Integer.toString(max);
+        }
+        else if(cl.contains("Double")){
+            double min = 9999999;
+            double max = -9999999;
+            while(iter.hasNext()){
+                org.bson.Document doc = (Document) iter.next();
+                double val = (double) doc.get(slotName);
+                if(val > max){
+                    max = val;
+                }
+                if(val < min){
+                    min = val;
+                }
             }
+            minval = Double.toString(min);
+            maxval = Double.toString(max);
         }
         String[] min_max_class = new String[3];
-        min_max_class[0] = Double.toString(min);
-        min_max_class[1] = Double.toString(max);
+        min_max_class[0] = minval;
+        min_max_class[1] = maxval;
         min_max_class[2] = cl;
         return min_max_class;
     }
