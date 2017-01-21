@@ -295,6 +295,19 @@ public class DrivingFeatureServlet extends HttpServlet {
             outputString = jsonObj;            
         }
 
+        else if(requestID.equalsIgnoreCase("applyComplexFilter")){
+            String filterExpression_raw = request.getParameter("filterExpression");
+            filterExpression_raw = filterExpression_raw.substring(1,filterExpression_raw.length());
+            System.out.println(filterExpression_raw);
+            FilterExpressionHandler feh = new FilterExpressionHandler();
+            ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(filterExpression_raw, new ArrayList<Integer>(), "||");
+            String jsonObj = gson.toJson(matchedArchIDs);
+            outputString = jsonObj;            
+        }        
+        
+        
+        
+        
 
         }
         catch(Exception e){ e.printStackTrace();}

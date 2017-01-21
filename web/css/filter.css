@@ -1,6 +1,11 @@
 /*
 
 
+#filter_application_status (div)
+    #applied_filter_1 .applied_filter (div)
+        .filter_application_activate
+        .filter_application_expression
+        .filter_application_delete
 #filter_options (div)
     #filter_options_dropdown_1 (select)
     #filter_options_dropdown_2 (select)
@@ -40,6 +45,19 @@
     font-size: 18px;
 }
 
+#filter_application_status{
+    width:80%;
+    margin: auto;
+    background-color: #E0E0E0; 
+}
+
+.applied_filter{
+    width:100%;
+}
+
+.filter_application_delete{
+    background-color: #FF5151;
+}
 
 #filter_options{
     width: 100%;
@@ -110,7 +128,7 @@
 
 
 
-
+/*
 #filter_expression{
     color: black;
     border: 1px black solid;
@@ -120,4 +138,4 @@
     margin-left: 5px;
     overflow:scroll;
 }
-            
+*/          

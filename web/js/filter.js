@@ -19,15 +19,16 @@ function openFilterOptions(){
             .append("p")
             .text("Filter Setting");
 
-            
+    var filterApplicationStatus = archInfoBox.append('div')
+            .attr('id','filter_application_status');
     var filterOptions = archInfoBox.append("div")
             .attr("id","filter_options");
     var filterInputs = archInfoBox.append("div")
-            .attr('id','filter_inputs')
+            .attr('id','filter_inputs');
     var filterHints = archInfoBox.append('div')
-            .attr('id','filter_hints')
+            .attr('id','filter_hints');
     var filterButtons = archInfoBox.append('div')
-            .attr('id','filter_buttons')
+            .attr('id','filter_buttons');
     
     var filterDropdownMenu = d3.select("#filter_options")
             .append("select")
@@ -882,7 +883,7 @@ function filter_input_Double(collectionName,slotName){
 
 function applyFilter(option){
     buttonClickCount_applyFilter += 1;
-    cancelDotSelections();
+    
     var wrong_arg = false;
     
     var filterExpression;
@@ -1074,27 +1075,171 @@ function applyFilter(option){
     }
 
     if(option==="new"){
-        
+        update_filter_application_status(filterExpression,option);
+        cancelDotSelections();
+        d3.selectAll('.dot')[0].forEach(function(d){
+            var id = d.__data__.ArchID;
+            if($.inArray(id,matchedArchIDs)!==-1){
+                d3.select(d).attr('class','dot_highlighted')
+                            .style("fill", "#0040FF");
+            }
+        });
     }else if(option==="add"){
-        
+        update_filter_application_status(filterExpression,option);
+        d3.selectAll('.dot')[0].forEach(function(d){
+            var id = d.__data__.ArchID;
+            if($.inArray(id,matchedArchIDs)!==-1){
+                d3.select(d).attr('class','dot_highlighted')
+                            .style("fill", "#0040FF");
+            }
+        });
     }else if(option==="within"){
-        
-        
+        update_filter_application_status(filterExpression,option);
+        d3.selectAll('.dot_highlighted')[0].forEach(function(d){
+            var id = d.__data__.ArchID;
+            if($.inArray(id,matchedArchIDs)===-1){
+                d3.select(d).attr('class','dot')
+                .style("fill", function (d) {return "#000000";});   
+            }
+        });     
     }
-    d3.selectAll('.dot')[0].forEach(function(d){
-        var id = d.__data__.ArchID;
-        if($.inArray(id,matchedArchIDs)!==-1){
-            d3.select(d).attr('class','dot_highlighted')
-                        .style("fill", "#0040FF");
-        }
-    });
-    
+
 
     if(wrong_arg){
     	alert("Invalid input argument");
     }
     d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
 }
+
+
+
+function update_filter_application_status(inputExpression,option){    
+    
+    var application_status = d3.select('#filter_application_status');
+    var count = application_status.selectAll('.applied_filter').size();
+    
+    var thisFilter = application_status.append('div')
+            .attr('id',function(){
+                var num = count+1;
+                return 'applied_filter_' + num;
+            })
+            .attr('class','applied_filter');
+    
+    
+    thisFilter.append('input')
+            .attr('type','checkbox')
+            .attr('class','filter_application_activate')
+            .style('float','left');
+    thisFilter.append('select')
+            .attr('class','filter_application_logical_connective')
+            .selectAll('option')
+            .data([{value:"&&",text:"AND"},{value:"||",text:"OR"}])
+            .enter()
+            .append("option")
+            .attr("value",function(d){
+                return d.value;
+            })
+            .text(function(d){
+                return d.text;
+            })
+            .style('float','left');
+    thisFilter.append('div')
+            .attr('class','filter_application_expression')
+            .text(inputExpression)
+            .style('float:left');
+    thisFilter.append('button')
+            .attr('class','filter_application_delete')
+            .text('delete')
+            .style('float','left');
+    
+    
+    if(option==="new"){
+        // Activate only the current filter
+        application_status.selectAll('.filter_application_activate')[0][0].checkted=false;
+        thisFilter.select('.filter_application_activate')[0][0].checkted=true;
+        thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
+    }else if(option==="add"){ // or
+        thisFilter.select('.filter_application_activate')[0][0].checkted=true;
+        thisFilter.select('.filter_application_logical_connective')[0][0].value="||";
+    }else if(option==="within"){ // and
+        thisFilter.select('.filter_application_activate')[0][0].checkted=true;
+        thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
+    }
+    
+    d3.select(thisFilter).select(".filter_application_delete").on("click",function(d){
+        d3.select(thisFilter).remove();
+    });
+    
+    d3.select(thisFilter).select('.filter_application_active').on("click",function(d){
+        var activated = d3.select(d)[0][0].checked;
+        d3.select(thisFilter).select('.filter_application_expression').style("color",function(d){
+            if(activated){
+                return "#000000"; //black
+            }else{
+                return "#D7D7D7"; // gray
+            }
+        });
+        applyComplexFilter();
+    });
+}
+
+
+function parse_filter_application_status(){
+    var application_status = d3.select('#filter_application_status');
+    var count = application_status.selectAll('.applied_filter').size();
+    var filter_expressions = [];
+    var filter_logical_connective = [];
+    application_status.selectAll('.applied_filter')[0].forEach(function(d){
+        var activated = d3.select(d).select('.filter_application_active')[0][0].checked;
+        var expression = d3.select(d).select('.filter_application_expression').text();
+        var logic = d3.select(d).select('filter_application_logical_connective')[0][0].value;
+        if(activated){
+            filter_expressions.push(expression);
+            filter_logical_connective.push(logic);
+        }
+    });
+    var filterExpression = "";
+    for(var i=0;i<filter_expressions.length;i++){
+        if(i > 0){
+            filterExpression = filterExpression + filter_logical_connective[i];
+        }
+        filterExpression = filterExpression + "{" + filter_expressions[i] + "}";
+    }
+    return filterExpression;
+}
+
+function applyComplexFilter(){
+    var filterExpression = parse_filter_application_status();
+    var matchedArchIDs;
+    
+    $.ajax({
+        url: "DrivingFeatureServlet",
+        type: "POST",
+        data: {ID: "applyComplexFilter",filterExpression:filterExpression},
+        async: false,
+        success: function (data, textStatus, jqXHR)
+        {
+            matchedArchIDs = JSON.parse(data);
+        },
+        error: function (jqXHR, textStatus, errorThrown)
+        {alert("Error in applying the filter");}
+    });
+    
+    cancelDotSelections();
+    d3.selectAll('.dot')[0].forEach(function(d){
+        var id = d.__data__.ArchID;
+        if($.inArray(id,matchedArchIDs)!==-1){
+            d3.select(d).attr('class','dot_highlighted')
+                        .style("fill", "#0040FF");
+        }
+    });    
+}
+
+
+
+
+
+
 
 
 
