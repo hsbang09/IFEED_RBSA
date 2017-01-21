@@ -27,16 +27,10 @@ import jess.Defrule;
 import jess.Fact;
 import jess.Rete;
 import jess.ValueVector;
-import rbsa.eoss.ActionAnalyzer;
-import rbsa.eoss.ConditionalElementAnalyzer;
 
-import rbsa.eoss.QueryBuilder;
-import rbsa.eoss.Result;
-import rbsa.eoss.ResultCollection;
-import rbsa.eoss.ResultManager;
 import rbsa.eoss.local.Params;
 import rbsa.eoss.JessRuleAnalyzer;
-import rbsa.eoss.DBManagement;
+import rbsa.eoss.DBQueryBuilder;
 
 
 
@@ -55,7 +49,7 @@ public class ResultsServlet extends HttpServlet {
 	ServletContext sctxt;
 	ServletConfig sconfig;
     
-    private DBManagement dbm = null;
+    private DBQueryBuilder dbm = null;
         
         
         
@@ -68,7 +62,7 @@ public class ResultsServlet extends HttpServlet {
     	instance = this;
     	sctxt = this.getServletContext();
     	sconfig = this.getServletConfig();
-        dbm = new DBManagement();
+        dbm = new DBQueryBuilder();
     }
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>

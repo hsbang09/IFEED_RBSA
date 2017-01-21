@@ -2,10 +2,10 @@
 
 
 #filter_options (div)
-    .filter_options_dropdown_1 (select)
-    .filter_options_dropdown_2 (select)
-    .filter_options_dropdown_3 (select)
-    .filter_options_dropdown_4 (select)
+    #filter_options_dropdown_1 (select)
+    #filter_options_dropdown_2 (select)
+    #filter_options_dropdown_3 (select)
+    #filter_options_dropdown_4 (select)
 #filter_inputs (div)
     #filter_inputs_div_1 (div)
         div

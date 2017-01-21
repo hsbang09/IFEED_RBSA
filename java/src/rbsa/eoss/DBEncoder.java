@@ -7,13 +7,7 @@ package rbsa.eoss;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.DB;
-import com.mongodb.DBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBList;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.DBCursor;
 import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.FindIterable;
@@ -37,7 +31,7 @@ import rbsa.eoss.local.Params;
  *
  * @author Bang
  */
-public class DBManagement {
+public class DBEncoder {
     
     private MongoClient mongoClient;
 //    private String dbName = "EOSS_eval_data";
@@ -45,45 +39,32 @@ public class DBManagement {
     private String metaDataCollectionName = "metadata";
     private String ruleCollectionName = "jessRules";
     private ArrayList<String> dataCollectionNames;
-    private static DBManagement instance = null;
+    private DBQueryBuilder dbquery;
+    private static DBEncoder instance = null;
 
     
-    public DBManagement(){
+    public DBEncoder(){
         try{            
 //            mongoClient = new MongoClient( "localhost" , 27017 );
             MongoClientURI uri = new MongoClientURI("mongodb://bang:qkdgustmd@ds145828.mlab.com:45828/rbsa_eoss");
             mongoClient = new MongoClient(uri);
-            
             dataCollectionNames = new ArrayList<>();
+            dbquery = new DBQueryBuilder(mongoClient);
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
     }    
-    
-    public DBManagement(String dbName){
-        try{            
-            this.dbName = dbName;
-            mongoClient = new MongoClient( "localhost" , 27017 );
-            dataCollectionNames = new ArrayList<>();
-        }catch(Exception e){
-            System.out.println(e.getMessage());
-        }
-    }
 
-    public static DBManagement getInstance()
+
+    public static DBEncoder getInstance()
     {
         if( instance == null ) 
         {
-            instance = new DBManagement();
+            instance = new DBEncoder();
         }
         return instance;
     }
-
-
     
-    
-    
-
     public void addNewCollection(String colName){
         this.dataCollectionNames.add(colName);
     }
@@ -102,7 +83,6 @@ public class DBManagement {
     }
     
     
-
     public void encodeMetadata(int ArchID, String bitString, double science, double cost){
         MongoDatabase Mdb = mongoClient.getDatabase(dbName);
         MongoCollection col = Mdb.getCollection(metaDataCollectionName);
@@ -152,7 +132,7 @@ public class DBManagement {
                 } else if(thisFact.getName().equals("DATABASE::Instrument")){
                     jess.Value slotVal = thisFact.getSlotValue("Name");
                     String instrumentName = slotVal.stringValue(r.getGlobalContext());                    
-                    if(this.QueryExists("science.DATABASE.Instrument","Name",instrumentName)){
+                    if(dbquery.QueryExists("science.DATABASE.Instrument","Name",instrumentName)){
                         // Remove the encoded fact from the list
                         factsToEncode.remove(0);
                         factsEncoded.add(thisFact.getFactId());
@@ -161,7 +141,7 @@ public class DBManagement {
                 } else if(thisFact.getName().equals("DATABASE::Launch-vehicle")){
                     jess.Value slotVal = thisFact.getSlotValue("id");
                     String lvName = slotVal.stringValue(r.getGlobalContext());                    
-                    if(this.QueryExists("cost.DATABASE.Launch_vehicle","id",lvName)){
+                    if(dbquery.QueryExists("cost.DATABASE.Launch_vehicle","id",lvName)){
                         // Remove the encoded fact from the list
                         factsToEncode.remove(0);
                         factsEncoded.add(thisFact.getFactId());
@@ -205,9 +185,9 @@ public class DBManagement {
         org.bson.Document doc = new org.bson.Document();
         
         try{
-            doc.append("ArchID",ArchID);
+            doc.append("ArchID", (double) ArchID);
             doc.append("factName", f.getName());
-            doc.append("factID",f.getFactId());
+            doc.append("factID", (double) f.getFactId());
             doc.append("module", f.getModule());            
         
             jess.Deftemplate factTemplate = f.getDeftemplate();
@@ -234,15 +214,9 @@ public class DBManagement {
                     if(!slotVal_string.equals("nil")){
                         // If the value is nil then don't save it in the DB
                         if(slotVal.isNumeric(r.getGlobalContext())){
-                            if(slotVal_string.contains(".")){ 
-                                // float
-                                double slotVal_double = slotVal.floatValue(r.getGlobalContext());
-                                doc.append(slot,slotVal_double);
-                            }else{ 
-                                // integer
-                                int slotVal_int = slotVal.intValue(r.getGlobalContext());
-                                doc.append(slot,slotVal_int);
-                            }
+                            // float
+                            double slotVal_double = slotVal.floatValue(r.getGlobalContext());
+                            doc.append(slot,slotVal_double);
                         }else{
                             // Save as string
                             String slotVal_string2 = slotVal.stringValue(r.getGlobalContext());
@@ -298,272 +272,7 @@ public class DBManagement {
     
     
     
-    
-    
-    
-    /**
-     * Returns the number of documents encoded in the metadata
-     * @return 
-     */
-    
-    public double getNArchs(){
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(this.metaDataCollectionName);
-        return col.count();
-    }
-    
-    /**
-     * Checks if the dataset contains the data related to a specific architecture defined by a boolean string
-     * @param booleanString
-     * @return 
-     */
-    public boolean findMatchingArch(String booleanString){
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        
-        MongoCollection col = Mdb.getCollection(this.metaDataCollectionName);
-        Document filter = new Document("bitString",booleanString);
-  
-        FindIterable found = col.find(filter);
-        MongoCursor iter = found.iterator();
-        if(iter.hasNext()){
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * Checks if there is a document whose slot value matches with a certain string input
-     * @param collectionName: Name of the collection
-     * @param slotName: Slot Name
-     * @param value: Value to compare with the actual slot value
-     * @return 
-     */
-    public boolean QueryExists(String collectionName, String slotName, String value){
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(collectionName);
-        Document filter = new Document(slotName,value);
-        FindIterable found = col.find(filter);
-        MongoCursor iter = found.iterator();
-        return iter.hasNext();    
-    }
-    
-    /**
-     * Finds and returns all bson documents in the metadata collection
-     * @return 
-     */
-    public ArrayList<org.bson.Document> getMetadata(){
-        ArrayList<org.bson.Document> docs = new ArrayList<>();
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(this.metaDataCollectionName);
-        FindIterable found = col.find();
-        MongoCursor iter = found.iterator();
-        while(iter.hasNext()){
-            org.bson.Document doc = (Document) iter.next();
-            docs.add(doc);
-        }
-        return docs;
-    }
-    
-    
-    
-    /**
-     * Returns a String array, containing the minimum value, the maximum value, and the class information of a given slot
-     * @param collectionName: Name of a collection
-     * @param slotName: Name of a slot
-     * @return Returns a string array of length 3. The first element is the minimum value stored in String.
-     *          The second element is the maximum value stored in String. The third element is the name of the class.
-     *          The class can be either java.lang.Double or java.lang.Integer.
-     */
-    public String[] getMinMaxValue(String collectionName,String slotName){        
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(collectionName);
-        FindIterable found = col.find();
-        MongoCursor iter = found.iterator();
-        if(!iter.hasNext()){
-            System.out.println("Warning: The collection is empty (Check the collection name)");
-            return new String[3];
-        }
-        org.bson.Document tempdoc = (Document) iter.next();
-        String cl = tempdoc.get(slotName).getClass().toString(); 
-        if(cl.contains("String")){
-            System.out.println("Warning: The given slot is a String");
-            return new String[3];
-        }
-        String minval="";
-        String maxval="";
-        if(cl.contains("Integer")){
-            int min = 9999999;
-            int max = -9999999;
-            while(iter.hasNext()){
-                org.bson.Document doc = (Document) iter.next();
-                int val = (int) doc.get(slotName);
-                if(val > max){
-                    max = val;
-                }
-                if(val < min){
-                    min = val;
-                }
-            }
-            minval = Integer.toString(min);
-            maxval = Integer.toString(max);
-        }
-        else if(cl.contains("Double")){
-            double min = 9999999;
-            double max = -9999999;
-            while(iter.hasNext()){
-                org.bson.Document doc = (Document) iter.next();
-                double val = (double) doc.get(slotName);
-                if(val > max){
-                    max = val;
-                }
-                if(val < min){
-                    min = val;
-                }
-            }
-            minval = Double.toString(min);
-            maxval = Double.toString(max);
-        }
-        String[] min_max_class = new String[3];
-        min_max_class[0] = minval;
-        min_max_class[1] = maxval;
-        min_max_class[2] = cl;
-        return min_max_class;
-    }
-        
-    
-    /**
-     * Returns a String specifying what the class of a requested slot is
-     * @param collectionName: Name of a collection
-     * @param slotName: Name of a slot
-     * @return 
-     */
-    public String getClassOfSlot(String collectionName, String slotName){
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(collectionName);
-        FindIterable found = col.find();
-        MongoCursor iter = found.iterator();
-        org.bson.Document doc = (org.bson.Document) iter.next();
-        return doc.get(slotName).getClass().toString();
-    }  
-    
-    
-    
-    public ArrayList<String> getValidValueList(String collectionName,String slotName){        
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(collectionName);
-        FindIterable found = col.find();
-        MongoCursor iter = found.iterator();
-        ArrayList<String> list = new ArrayList<>();
-        while(iter.hasNext()){
-            org.bson.Document doc = (Document) iter.next();
-            String val = doc.get(slotName, String.class);
-            if(!list.contains(val)){
-                list.add(val);
-            }
-        }
-        return list;
-    }
- 
-    
-    /**
-     * Returns names of all the slots for a given collection. 
-     * @param collectionName: Name of a collection in the database
-     * @param mode: 'slow' mode will go over all documents to gather the slot names (useful when the slot names vary across documents)
-     *              'fast' mode will only check the first document to save the slot names
-     * @return 
-     */
-    public ArrayList<String> getSlotNames(String collectionName, String mode){
-        ArrayList<String> slotNames = new ArrayList<>();
-        
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        MongoCollection col = Mdb.getCollection(collectionName);
-        FindIterable found = col.find();
-        MongoCursor iter = found.iterator();
-        if(!iter.hasNext()){
-            System.out.println("Warning: The collection is empty (Check the collection name)");
-            return slotNames;
-        }
-        if (mode.equalsIgnoreCase("slow")){
-            while(iter.hasNext()){
-                org.bson.Document doc = (Document) iter.next();
-                for(String key:doc.keySet()){
-                    if(slotNames.contains(key)){continue;}
-                    else{slotNames.add(key);}
-                }
-            }
-        }
-        else{
-            org.bson.Document doc = (Document) iter.next();
-            for(String key:doc.keySet()){
-                slotNames.add(key);
-            }
-        }
-        return slotNames;
-    }
-    
-    
-    
-    
-    /**
-     * Makes a query from the database
-     * 
-     * @param collectionPrefix: Prefix for the collection name: science or cost
-     * @param factName: Name of the fact to be searched
-     * @param slots: Names of the slots to be used in the filter
-     * @param conditions: Equality and inequality signs. Valid input are: gt, lt, gte, lte, eq
-     * @param values: Values to be compared.
-     * @param valueTypes: Types of values. Valid inputs are: Integer, Double, String
-     */
-    public void makeQuery(String collectionPrefix, String factName, ArrayList<String> slots, ArrayList<String> conditions, 
-                            ArrayList<String> values, ArrayList<String> valueTypes){
-        
-        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
-        
-        String collectionName = collectionPrefix + "." + factName.replace("::",".").replace("-", "_");
-        MongoCollection col = Mdb.getCollection(collectionName);
-        
-        Document filter = new Document("factName",factName);
-        
-        for(int i=0;i<slots.size();i++){
-            String slotName = slots.get(i);
-            String cond = conditions.get(i);
-            String val = values.get(i);
-            String valType = valueTypes.get(i);
-            if(cond.equals("eq")){
-                if(valType.equals("String")){
-                    filter.append(slotName,val);
-                }
-                else if(valType.equals("Integer")){
-                    filter.append(slotName, Integer.parseInt(val));
-                }
-                else if(valType.equals("Double")){
-                    filter.append(slotName, Double.parseDouble(val));
-                }
-            }
-            else if(cond.equals("gt") || cond.equals("gte") || cond.equals("lt") || cond.equals("lte")){
-                if(valType.equals("String")){
-                    filter.append(slotName, new Document("$"+cond,val));
-                }
-                else if(valType.equals("Integer")){
-                    filter.append(slotName, new Document("$"+cond,Integer.parseInt(val)));
-                }
-                else if(valType.equals("Double")){
-                    filter.append(slotName, new Document("$"+cond,Double.parseDouble(val)));
-                }
-            }            
-        }
-        
-        FindIterable found = col.find(filter);
-        found.projection(fields(
-                    exclude("_id","factID","factHistory")
-                ));
-        MongoCursor iter = found.iterator();
-        while(iter.hasNext()){
-            Document doc = (Document) iter.next();
-            System.out.println(doc.toString());
-        }
-    }
-    
+
 
     
     

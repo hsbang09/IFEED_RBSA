@@ -6,7 +6,6 @@
 
 
 
-
 function openFilterOptions(){
     
     buttonClickCount_filterOptions += 1;
@@ -20,6 +19,7 @@ function openFilterOptions(){
             .append("p")
             .text("Filter Setting");
 
+            
     var filterOptions = archInfoBox.append("div")
             .attr("id","filter_options");
     var filterInputs = archInfoBox.append("div")
@@ -72,9 +72,15 @@ function openFilterOptions(){
             .attr('disabled', true);
 
     d3.select("#filter_options_dropdown_1").on("change",filter_options_dropdown_1_changed);
-    d3.select("#applyFilterButton_add").on("click",applyFilter_add);
-    d3.select("#applyFilterButton_new").on("click",applyFilter_new);
-    d3.select("#applyFilterButton_within").on("click",applyFilter_within);
+    d3.select("#applyFilterButton_add").on("click",function(d){
+        applyFilter("add");
+    });
+    d3.select("#applyFilterButton_new").on("click",function(d){
+        applyFilter("new");
+    });
+    d3.select("#applyFilterButton_within").on("click",function(d){
+        applyFilter("within");
+    });
 //    d3.select("[id=applyFilterButton_complement]").on("click",applyFilter_complement);
     
     highlight_basic_info_box()
@@ -216,12 +222,6 @@ function filter_options_dropdown_preset_filters(){
     } else{
         filter_input_preset(selectedOption,false); 
         d3.select("[id=saveFilter]").attr('disabled', true);
-        
-        
-//            d3.select('#filter_inputs')
-//            .append('div')
-//            .attr('id','filter_inputs_div_1')
-//            .attr('class','filter_inputs_div');
     }
 
 }
@@ -299,7 +299,7 @@ function filter_input_preset(selectedOption,userDefOption){
                 .attr('class','filter_hints_div')
                 .text("(Hint: Designs that have no instrument inside the specified orbit are chosen)");       
     } 
-    else if (selectedOption=="numOrbitUsed"){
+    else if (selectedOption=="numOrbits"){
         append_filterInputField_numOrbitInput();
         d3.select("#filter_hints")
                 .append("div")
@@ -313,7 +313,7 @@ function filter_input_preset(selectedOption,userDefOption){
                 .append("div")
                 .attr("id","filter_hints_div_1")
                 .attr('class','filter_hints_div')
-                .text("(Hint: This highlights all the designs with the specified number of instruments. You can also specify the instrument name, and only those instruments will be counted.)"); 
+                .text("(Hint: This highlights all the designs with the specified number of instruments. If you specify an orbit name, it will count all instruments in that orbit. If you can also specify an instrument name, and only those instruments will be counted across all orbits. If you leave both instruments and orbits blank, all instruments across all orbits will be counted.)"); 
     } 
     
     else if(selectedOption=="subsetOfInstruments"){
@@ -442,9 +442,19 @@ function append_filterInputField_orbitAndMultipleInstInput(){
 
 
 function append_filterInputField_numOfInstruments(){
-        d3.select('#filter_inputs')
+    d3.select('#filter_inputs')
             .append("div")
             .attr("id","filter_inputs_div_1")
+            .attr('class','filter_inputs_div')
+            .text("Input an orbit name (Could be N/A): ")
+            .append("input")
+            .attr("class","filter_inputs_textbox")
+            .attr("type","text")
+            .attr("value","N/A");    
+    
+    d3.select('#filter_inputs')
+            .append("div")
+            .attr("id","filter_inputs_div_2")
             .attr('class','filter_inputs_div')
             .text("Input instrument name (Could be N/A): ")
             .append("input")
@@ -453,7 +463,7 @@ function append_filterInputField_numOfInstruments(){
             .attr("value","N/A");
 
     d3.select('#filter_inputs').append("div")
-            .attr("id","filter_inputs_div_2")
+            .attr("id","filter_inputs_div_3")
             .attr('class','filter_inputs_div')
 	    .text("Input a number of instrument used (should be greater than or equal to 0): ")
             .append("input")
@@ -600,9 +610,7 @@ function filter_options_dropdown_science(){
         }
         filter_options_dropdown_attribute(collectionName,slot);
     });
-    
-    
-    
+        
 }
 
 
@@ -702,7 +710,7 @@ function filter_options_dropdown_attribute(collectionName, slotName){
     var slotClass = get_class_of_slot(collectionName,slotName);
     if(slotClass.includes("String")){
         filter_input_String(collectionName,slotName);
-    }else{ // java.lang.Double or java.lang.Integer
+    }else{ // java.lang.Double
         filter_input_Double(collectionName,slotName);
     }
 }
@@ -717,7 +725,7 @@ function filter_input_String(collectionName, slotName){
     }    
     
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
-                    {value:"eq",text:"equal to"},{value:"neq",text:"not equal to"},{value:"lt",text:"less than"}];    
+                    {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
     
     d3.select("#filter_inputs")
             .append("div")
@@ -795,7 +803,7 @@ function filter_input_Double(collectionName,slotName){
     var max_val = min_max[1];
     
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
-                    {value:"eq",text:"equal to"},{value:"neq",text:"not equal to"},{value:"lt",text:"less than"}];
+                    {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];
     
    
     d3.select("#filter_inputs")
@@ -871,604 +879,582 @@ function filter_input_Double(collectionName,slotName){
 
 
 
-function applyFilter_new(){
-	
-    buttonClickCount_applyFilter += 1;
 
+function applyFilter(option){
+    buttonClickCount_applyFilter += 1;
     cancelDotSelections();
     var wrong_arg = false;
-    var filterType = d3.select("[id=dropdown_presetFilters]")[0][0].value;
-    var neg = false;
     
-	
+    var filterExpression;
+    var preset = false;
+    var matchedArchIDs = null;
     
-    if (filterType == "paretoFront"){
-        var filterInput = d3.select("[id=filter_input1_textBox]")[0][0].value;
-        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
-        	var rank = parseInt(d3.select(d).attr("paretoRank"));
-            if (rank <= +filterInput && rank >= 0){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-
-    }
-    else if (filterType == "present" || filterType == "absent" || filterType == "inOrbit" || filterType == "notInOrbit" || filterType == "together" || filterType == "togetherInOrbit" || filterType == "separate" || 
-            filterType == "emptyOrbit" || filterType=="numOrbitUsed" ||
-            filterType=="subsetOfInstruments" || filterType=="numOfInstruments"){
-
-        var filterInputs = [];
-        if(d3.select("[id=filter_input1_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input1_textBox]")[0][0].value);
-        }
-        if(d3.select("[id=filter_input2_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input2_textBox]")[0][0].value);
-        }
-        if(d3.select("[id=filter_input3_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input3_textBox]")[0][0].value);
-        }
-
-        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
-            var bitString = d.__data__.bitString;
-            var temp = presetFilter2(filterType,bitString,filterInputs,neg);
-            if(temp==null){
-            	wrong_arg = true;
-            	return;
-            }
-            else if (temp){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-    } else if(filterType == "defineNewFilter" || (filterType =="not_selected" && userDefFilters.length !== 0)){
-        var filterExpression = d3.select("[id=filter_expression]").text();
-        tmpCnt =0;
-
-        d3.selectAll("[class=dot]")[0].forEach(function(d){
-        	
-            var bitString = d.__data__.bitString;
-            if(applyUserDefFilterFromExpression(filterExpression,bitString)){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-
-        d3.select("[id=saveFilter]").attr('disabled', null)
-                                    .on("click",saveNewFilter);
-    }
-    else{
-        for(var k=0 ; k < userDefFilters.length; k++){
-           if(userDefFilters[k].name == filterType){
-                var filterExpression = userDefFilters[k].expression;
-                d3.selectAll("[class=dot]")[0].forEach(function(d){
-                    var bitString = d.__data__.bitString;
-                    if(applyUserDefFilterFromExpression(filterExpression,bitString)){
-                        d3.select(d).attr("class", "dot_clicked")
-                                    .style("fill", "#0040FF");
-                    }
-                }); 
-           } 
-        }
-    }
-    if(wrong_arg){
-    	alert("Invalid input argument");
-    }
-    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
-}
-
-function applyFilter_within(){
-	
-	
-    buttonClickCount_applyFilter += 1;
-    var wrong_arg = false;
-    var filterType = d3.select("[id=dropdown_presetFilters]")[0][0].value;
-    var neg = false;
-
-    if (filterType == "paretoFront"){
-        var filterInput = d3.select("[id=filter_input1_textBox]")[0][0].value;
-        var clickedArchs = d3.selectAll("[class=dot_clicked]")[0].forEach(function (d) {
-
-        	var rank = parseInt(d3.select(d).attr("paretoRank"));
-            if (rank <= +filterInput && rank >= 0){
-            }else {
-                d3.select(d).attr("class", "dot")
-                            .style("fill", function (d) {
-                                if (d.status == "added") {
-                                    return "#188836";
-                                } else if (d.status == "justAdded") {
-                                    return "#20FE5B";
-                                } else {
-                                    return "#000000";
-                                }
-                            });
-            }
-        });
-
-    }
-    else if (filterType == "present" || filterType == "absent" || filterType == "inOrbit" || filterType == "notInOrbit" || 
-            filterType == "together" || filterType == "togetherInOrbit" || filterType == "separate" || 
-            filterType == "emptyOrbit" || filterType=="numOrbitUsed" || filterType=="subsetOfInstruments"||
-            filterType == "numOfInstruments"	){
-
-
-        var filterInputs = [];
-        if(d3.select("[id=filter_input1_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input1_textBox]")[0][0].value);
-        }
-        if(d3.select("[id=filter_input2_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input2_textBox]")[0][0].value);
-        }
-        if(d3.select("[id=filter_input3_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input3_textBox]")[0][0].value);
-        }
-
-
-        var clickedArchs = d3.selectAll("[class=dot_clicked]")[0].forEach(function (d) {
-//                            var bitString = booleanArray2String(d.__data__.bitString)
-
-            var bitString = d.__data__.bitString;
-            var temp = presetFilter2(filterType,bitString,filterInputs,neg);
-            if(temp==null){
-            	wrong_arg = true;
-            	return;
-            } else if(temp){
-            } else {
-                d3.select(d).attr("class", "dot")
-                            .style("fill", function (d) {
-                                if (d.status == "added") {
-                                    return "#188836";
-                                } else if (d.status == "justAdded") {
-                                    return "#20FE5B";
-                                } else {
-                                    return "#000000";
-                                }
-                            });
-            }
-
-
-        });
-    }
-    else{
-        for(var k=0 ; k < userDefFilters.length; k++){
-           if(userDefFilters[k].name == filterType){
-                var filterExpression = userDefFilters[k].expression;
-                d3.selectAll("[class=dot_clicked]")[0].forEach(function(d){
-                    var bitString = d.__data__.bitString;
-                    if(applyUserDefFilterFromExpression(filterExpression,bitString)){
-                        d3.select(d).attr("class", "dot_clicked")
-                                    .style("fill", "#0040FF");
-                    }
-                }); 
-           } 
-        }
-    }
-    if(wrong_arg){
-    	alert("Invalid input argument");
-    }
-    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
-}
-
-
-function applyFilter_add(){
-	
-    buttonClickCount_applyFilter += 1;
-    var wrong_arg = false;
-    var filterType = d3.select("[id=dropdown_presetFilters]")[0][0].value;
-    var neg = false;
+    var dropdown1 = d3.select("#filter_options_dropdown_1")[0][0].value;
+    var dropdown2 = null;
+    var dropdown3 = null;
+    var dropdown4 = null;
+    var input1_textbox = null; var input1_select = null;
+    var input2_textbox = null; var input2_select = null;
+    var input3_textbox = null;
     
-    if (filterType == "paretoFront"){
-        var filterInput = d3.select("[id=filter_input1_textBox]")[0][0].value;
-        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
-        	var rank = parseInt(d3.select(d).attr("paretoRank"));
-            if (rank <= +filterInput && rank >= 0){
-            	d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-
+    if(d3.select('#filter_options_dropdown_2')[0][0]!==null){
+        dropdown2 = d3.select('#filter_options_dropdown_2')[0][0].value;
     }
-    else if (filterType == "present" || filterType == "absent" || filterType == "inOrbit" || filterType == "notInOrbit" || 
-            filterType == "together" || filterType == "togetherInOrbit" || filterType == "separate" || 
-            filterType == "emptyOrbit" || filterType=="numOrbitUsed" || filterType =="subsetOfInstruments"||
-            filterType=="numOfInstruments"){
-
-
-        var filterInputs = [];
-        if(d3.select("[id=filter_input1_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input1_textBox]")[0][0].value);
-        }
-        if(d3.select("[id=filter_input2_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input2_textBox]")[0][0].value);
-        }
-        if(d3.select("[id=filter_input3_textBox]")[0][0]!==null){
-            filterInputs.push(d3.select("[id=filter_input3_textBox]")[0][0].value);
-        }
-
-        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
-//                            var bitString = booleanArray2String(d.__data__.bitString)
-            var bitString = d.__data__.bitString;
-            var temp = presetFilter2(filterType,bitString,filterInputs,neg);
-            if(temp==null){
-            	wrong_arg = true;
-            	return;
-            }
-            else if (temp){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
+    if(d3.select('#filter_options_dropdown_3')[0][0]!==null){
+        dropdown3 = d3.select('#filter_options_dropdown_3')[0][0].value;
     }
-    else{
-        for(var k=0 ; k < userDefFilters.length; k++){
-           if(userDefFilters[k].name == filterType){
-                var filterExpression = userDefFilters[k].expression;
-                d3.selectAll("[class=dot]")[0].forEach(function(d){
-                    var bitString = d.__data__.bitString;
-                    if(applyUserDefFilterFromExpression(filterExpression,bitString)){
-                        d3.select(d).attr("class", "dot_clicked")
-                                    .style("fill", "#0040FF");
-                    }
-                }); 
-           } 
-        }
+    if(d3.select('#filter_options_dropdown_4')[0][0]!==null){
+        dropdown3 = d3.select('#filter_options_dropdown_4')[0][0].value;
+    }    
+    if(d3.select('#filter_inputs_div_1').select('.filter_inputs_textbox')[0][0]!==null){
+        input1_textbox = d3.select('#filter_inputs_div_1').select('.filter_inputs_textbox')[0][0].value;
     }
-    if(wrong_arg){
-    	alert("Invalid input argument");
+    if(d3.select('#filter_inputs_div_2').select('.filter_inputs_textbox')[0][0]!==null){
+        input2_textbox = d3.select('#filter_inputs_div_2').select('.filter_inputs_textbox')[0][0].value;
     }
-    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
-}
-
-
-
-
-
-function applyFilter(filterType,filterInput){
-    cancelDotSelections();
-    var wrong_arg = false;
-    var neg = false;
-    if (filterType == "paretoFront"){
-        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
-        	var rank = parseInt(d3.select(d).attr("paretoRank"));
-            if (rank <= +filterInput && rank >= 0){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-
-    }
-    else if (filterType == "present" || filterType == "absent" || filterType == "inOrbit" || filterType == "notInOrbit" || filterType == "together" || filterType == "togetherInOrbit" || filterType == "separate" || 
-            filterType == "emptyOrbit" || filterType=="numOrbitUsed" || filterType=="subsetOfInstruments"||
-            filtertype == "numOfInstruments"){
-
-        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
-            var bitString = d.__data__.bitString;
-            var temp = presetFilter2(filterType,bitString,filterInputs,neg);
-            if(temp==null){
-            	wrong_arg = true;
-            	return;
-            }
-            else if (temp){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-    } else if(filterType == "defineNewFilter" || (filterType =="not_selected" && userDefFilters.length !== 0)){
-        var filterExpression = d3.select("[id=filter_expression]").text();
-        tmpCnt =0;
-
-        d3.selectAll("[class=dot]")[0].forEach(function(d){
-        	
-            var bitString = d.__data__.bitString;
-            if(applyUserDefFilterFromExpression(filterExpression,bitString)){
-                d3.select(d).attr("class", "dot_clicked")
-                            .style("fill", "#0040FF");
-            }
-        });
-
-        d3.select("[id=saveFilter]").attr('disabled', null)
-                                    .on("click",saveNewFilter);
-    }
-    else{
-    	
-        for(var k=0 ; k < userDefFilters.length; k++){
-           if(userDefFilters[k].name == filterType){
-                var filterExpression = userDefFilters[k].expression;
-                d3.selectAll("[class=dot]")[0].forEach(function(d){
-                    var bitString = d.__data__.bitString;
-                    if(applyUserDefFilterFromExpression(filterExpression,bitString)){
-                        d3.select(d).attr("class", "dot_clicked")
-                                    .style("fill", "#0040FF");
-                    }
-                }); 
-           } 
-        }
-    }
-    if(wrong_arg){
-    	alert("Invalid input argument");
-    }
-    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
-}
-
-
-
-
-   
-
-
-function presetFilter2(filterName,bitString,inputs,neg){
-    var filterInput1;
-    var filterInput2;
-    var filterInput3;
-
-    filterInput1 = inputs[0];
-    if(inputs.length > 1){
-        filterInput2 = inputs[1];
-    }
-    if(inputs.length > 2){
-        filterInput3 = inputs[2];
-    }
-
-    var output;
-    var leng = bitString.length;
-    var norb = orbitList.length;
-    var ninstr = instrList.length;
-
-    if(filterName==="present"){
-        filterInput1 = relabelback(filterInput1);
-        var thisInstr = $.inArray(filterInput1,instrList);
-        if(thisInstr==-1){
-        	return null;
-        }
-        output = false;
-        for(var i=0;i<orbitList.length;i++){
-            if(bitString[ninstr*i+thisInstr]===true){
-                output = true;
-                break;
-            }
-        }
-    } else if(filterName==="absent"){
-        filterInput1 = relabelback(filterInput1);
-        var thisInstr = $.inArray(filterInput1,instrList);
-        if(thisInstr==-1){
-        	return null;
-        }
-        output = true;
-        for(var i=0;i<orbitList.length;i++){
-            if(bitString[ninstr*i+thisInstr]===true){
-                output = false;
-                break;
-            }
-        }
-    } else if(filterName==="inOrbit"){
-        filterInput1 = relabelback(filterInput1);
-        filterInput2 = relabelback(filterInput2);
-        output = false;
-        var thisOrbit = $.inArray(filterInput1,orbitList);
-        var thisInstr = $.inArray(filterInput2,instrList);
+    if(d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0]!==null){
+        input3_textbox = d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0].value;
+    }        
+    if(d3.select('#filter_inputs_div_1').select('.filter_inputs_select')[0][0]!==null){
+        input1_select = d3.select('#filter_inputs_div_1').select('.filter_inputs_select')[0][0].value;
+    }        
+    if(d3.select('#filter_inputs_div_2').select('.filter_inputs_select')[0][0]!==null){
+        input2_select = d3.select('#filter_inputs_div_2').select('.filter_inputs_select')[0][0].value;
+    }        
+    
+    if(dropdown1=="design_input"){ 
         
-        if(thisInstr==-1 || thisOrbit==-1){
-        	return null;
-        }
-            if(bitString[thisOrbit*ninstr + thisInstr]===true){
-                output = true;
-            }
-    } else if(filterName==="notInOrbit"){
-        filterInput1 = relabelback(filterInput1);
-        filterInput2 = relabelback(filterInput2);
-        output = true;
-        var thisOrbit = $.inArray(filterInput1,orbitList);
-        var thisInstr = $.inArray(filterInput2,instrList);
-        if(thisInstr==-1 || thisOrbit==-1){
-        	return null;
-        }
-            if(bitString[thisOrbit*ninstr + thisInstr]===true){
-                output = false;
-            }
-    } else if(filterName === "together"){
-        output = false;
-        var splitInstruments = filterInput1.split(",");
-        var thisInstr1 = $.inArray(relabelback(splitInstruments[0]),instrList);
-        var thisInstr2 = $.inArray(relabelback(splitInstruments[1]),instrList);
-        var thisInstr3;
-        if(splitInstruments.length===2){
-            if(thisInstr1==-1 || thisInstr2==-1){
-            	return null;
-            }
-            for(var i=0;i<norb;i++){
-                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true){
-                    output = true;
-                    break;
-                }
-            }
-        } else {
-            thisInstr3 = $.inArray(relabelback(splitInstruments[2]),instrList);
-            if(thisInstr1==-1 || thisInstr2==-1 || thisInstr3==-1){
-            	return null;
-            }
-            for(var i=0;i<norb;i++){
-                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true
-                        && bitString[i*ninstr + thisInstr3] === true){
-                    output = true;
-                    break;
-                }
-            }
-        }
-    } else if(filterName === "togetherInOrbit"){
-        output = false;
-        var thisOrbit =  $.inArray(relabelback(filterInput1),orbitList);
-        var splitInstruments = filterInput2.split(",");
-        var thisInstr1 = $.inArray(relabelback(splitInstruments[0]),instrList);
-        var thisInstr2 = $.inArray(relabelback(splitInstruments[1]),instrList);
-        var thisInstr3;
-        if(splitInstruments.length===2){
-            if(thisInstr1==-1 || thisInstr2==-1 || thisOrbit==-1){
-            	return null;
-            }
-            if(bitString[thisOrbit*ninstr + thisInstr1] === true && bitString[thisOrbit*ninstr + thisInstr2] === true){
-                output = true;
-            }
-        } else {
-            thisInstr3 = $.inArray(relabelback(splitInstruments[2]),instrList);
-            if(thisInstr1==-1 || thisInstr2==-1 || thisInstr3==-1 || thisOrbit==-1){
-            	return null;
-            }
-            if(bitString[thisOrbit*ninstr + thisInstr1] === true && bitString[thisOrbit*ninstr + thisInstr2] === true
-                        && bitString[thisOrbit*ninstr + thisInstr3] === true){
-                output = true;
-            }
-        }
-    } else if(filterName ==="separate"){
-        output = true;
-        var splitInstruments = filterInput1.split(",");
-        var thisInstr1 = $.inArray(relabelback(splitInstruments[0]),instrList);
-        var thisInstr2 = $.inArray(relabelback(splitInstruments[1]),instrList);
-        var thisInstr3;
-        if(splitInstruments.length===2){
-            if(thisInstr1==-1 || thisInstr2==-1){
-            	return null;
-            }
-            for(var i=0;i<norb;i++){
-                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true){
-                    output = false;
-                    break;
-                }
-            }
-        } else {
-            thisInstr3 = $.inArray(relabelback(splitInstruments[2]),instrList);
-            if(thisInstr1==-1 || thisInstr2==-1 || thisInstr3==-1){
-            	return null;
-            }
-            for(var i=0;i<norb;i++){
-                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true
-                        && bitString[i*ninstr + thisInstr3] === true){
-                    output = false;
-                    break;
-                }
-            }
-        }
-    } else if(filterName ==="emptyOrbit"){
-        var thisOrbit =  $.inArray(relabelback(filterInput1),orbitList);
-        if(thisOrbit==-1){
-        	return null;
-        }
-        output = true;
-        for(var i=0;i<ninstr;i++){
-            if(bitString[thisOrbit*ninstr + i]===true){
-                output=false;
-                break;
-            }
-        }
-    } else if(filterName ==="numOrbitUsed"){
-        var numOrbits = filterInput1;
-        if(numOrbits > 5 || numOrbits < 0){
-        	return null;
-        }
-        var cnt = 0;
-        for (var i=0;i<norb;i++){
-            for (var j=0;j<ninstr;j++){
-                if(bitString[i*ninstr+j]==true){
-                    cnt++;
-                    break;
-                }
-            }
-        }
-        if(cnt==numOrbits){
-            output = true;
-        } else{
-            output= false;
-        }  
+        preset = true;
         
-    } else if(filterName === "numOfInstruments"){
-        output = false;
-
-        var all_instruments = false;
-        var thisInstr = -1;
-        
-        var instrument;
-        var num_of_instruments;
-        if(filterInput1.indexOf(",") != -1){
-        	var comma = filterInput1.indexOf(",");
-        	instrument = filterInput1.substring(0,comma);
-        	num_of_instruments = filterInput1.substring(comma+1);
-        }else{
-        	instrument = filterInput1;
-        	num_of_instruments = filterInput2;
-        }
-        
-        if(instrument=="N/A"){
-        	//continue;
-        	all_instruments = true;
-        }
-        else{
-            thisInstr = $.inArray(relabelback(instrument),instrList);
-            if(thisInstr==-1){
-            	return null;
-            }
-        }        
-        var cnt = 0;
-        for(var i=0;i<orbitList.length;i++){
-        	if(all_instruments){
-        		for(var j=0;j<instrList.length;j++){
-                	if(bitString[i*ninstr + j] === true){
-                        cnt = cnt+1;
-                    }
-        		}
-        	}else{
-            	if(bitString[i*ninstr + thisInstr] === true){
-                    cnt = cnt+1;
-                }
-        	}
-        }
-
+        // Example of an filter expression: {presetName[orbits;instruments;numbers]} 
+        var presetFilter = dropdown2;
+        if(presetFilter=="present" || presetFilter=="absent" || presetFilter=="together" || presetFilter=="separate"){
+            var instrument = input1_textbox;
+            filterExpression = presetFilter + "[;" + Name2Index(instrument,"instrument") + ";]";
+        }else if(presetFilter == "inOrbit" || presetFilter == "notInOrbit" || presetFilter=="togetherInOrbit"){
+            var orbit = input1_textbox;
+            var instrument = input2_textbox;
+            filterExpression = presetFilter + "["+ Name2Index(orbit,"orbit") + ";" + Name2Index(instrument,"instrument")+ ";]";
+        }else if(presetFilter =="emptyOrbit"){
+            var orbit = input1_textbox;
+            filterExpression = presetFilter + "[" + Name2Index(orbit,"orbit") + ";;]";
+        }else if(presetFilter=="numOrbits"){
+            var number = input1_textbox;
+            filterExpression = presetFilter + "[;;" + number + "]";
+        }else if(presetFilter=="subsetOfInstruments"){
+            // To be implemented
+        }else if(presetFilter=="numOfInstruments"){
+            var orbit = input1_textbox;
+            var instrument = input2_textbox;
+            var number = input3_textbox;
+            // There are 3 possibilities
             
-        if(num_of_instruments== ""+cnt){
-        	output=true;
-        }else{
-        	output=false;
-        }
-        return checkNeg(output,neg)     
-        
-    } else if(filterName === "subsetOfInstruments"){ 
-        var thisOrbit = $.inArray(relabelback(filterInput1),orbitList);
-        var minmax = filterInput2.split(",");
-        var instruments = filterInput3.split(",");
-
-        var constraint = minmax.length;
-        var numOfInstr = instruments.length;
-
-        var min,max;
-        if(constraint===1){ // only the minimum number of instruments is typed in
-            min = minmax[0];
-            max = 100;
-        } else if(constraint===2){
-            min = minmax[0];
-            max = minmax[1];
-        }
-
-        var size = instruments.length;
-        var cnt=0;
-
-        for(var i=0;i<size;i++){ //var thisInstr1 = $.inArray(splitInstruments[0],instrList);
-            var thisInstr = $.inArray(relabelback(instruments[i]),instrList);
-            if(bitString[thisOrbit*ninstr + thisInstr]===true){
-                cnt++;
+            var orbitEmpty = false; 
+            var instrumentEmpty = false;
+            
+            if(orbit=="N/A" || orbit.length==0){
+                orbitEmpty=true;
+            }
+            if(instrument=="N/A" || instrument.length==0){
+                instrumentEmpty = true;
+            }
+            if(orbitEmpty && instrumentEmpty){
+                // Count all instruments across all orbits
+                filterExpression=presetFilter + "[;;" + number + "]";
+            }else if(orbitEmpty){
+                // Count the number of specified instrument
+                filterExpression=presetFilter + "[;" + Name2Index(instrument,"instrument") + ";" + number + "]";
+            }else if(instrumentEmpty){
+                // Count the number of instruments in an orbit
+                filterExpression=presetFilter + "[" + Name2Index(orbit,"orbit") + ";;" + number + "]";
             }
         }
-        if(cnt <= max && cnt >= min){
-            output = true;
+
+    }else if(dropdown1==="objective"){
+        var collectionName;
+        var slotName;
+        
+        if(dropdown2==="pareto_front"){
+            // To be implemented    
+            matchedArchIDs = [];
+            var filterInput = d3.select("#filter_inputs_div_1").select('.filter_inputs_textbox')[0][0].value;
+            d3.selectAll("[class=dot]")[0].forEach(function (d) {
+                var rank = parseInt(d3.select(d).attr("paretoRank"));
+                if (rank <= +filterInput && rank >= 0){
+                    var id = d.__data__.ArchID;
+                    matchedArchIDs.push(id);
+                }
+            });  
+            d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
+                var rank = parseInt(d3.select(d).attr("paretoRank"));
+                if (rank <= +filterInput && rank >= 0){
+                    var id = d.__data__.ArchID;
+                    matchedArchIDs.push(id);
+                }
+            });             
+        }else if(dropdown2==="science"){
+
+            if(dropdown3==="not_selected"){
+                return;
+            }else if(dropdown3==="mission"){
+               collectionName = "science.MANIFEST.Mission";
+            }else if(dropdown3==="measurement"){
+                collectionName = "science.REQUIREMENTS.Measurement";
+            }else if(dropdown3==="capabilities"){
+                collectionName = "science.CAPABILITIES.Manifested_instrument";
+            }else if(dropdown3==="stakeholder"){
+                collectionName = "science.AGGREGATION.STAKEHOLDER";
+            }else if(dropdown3==="objective"){
+                collectionName = "science.AGGREGATION.OBJECTIVE";
+            }else if(dropdown3==="subobjective"){
+                collectionName = "science.AGGREGATION.SUBOBJECTIVE";
+            }     
+            slotName = dropdown4;
+            if(slotName=="not_selected"){return;}
+        }else if(dropdown2=="cost"){
+            slotName = dropdown3;
+            if(slotName=="not_selected"){return;}
+            collectionName = "cost.MANIFEST.Mission";
         }else{
-            output = false;
+            // Not selected
+            return;
         }
+        
+        // Examples of feature expressions
+        // "{collectionName:gt[0],slotName:"String"}"
+        // "{collectionName:gt[0],slotName:[minVal,maxVal]}"
+        // "{collectionName:gt[0],slotName:[,maxVal]}"
+        
+        var Fact_condition = input1_select;
+        var Fact_number = input1_textbox; 
+        var slot_expression;
+        if(d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0]==null){
+            // Numeric variable
+            var slot_condition = input2_select;
+            var slot_value = input2_textbox; 
+            if(slot_condition=="not_selected"){
+                return;
+            }else if(slot_condition=="gt"){
+                slot_expression = "[" + slot_value + ",]";
+            }else if(slot_condition=="lt"){
+                slot_expression = "[," + slot_value + "]";
+            }else if(slot_condition=="eq"){
+                slot_expression = "[" + slot_value + "]";
+            }            
+        }else{
+            // String variable
+            var slot_value = input2_select;
+            var slot_value_substring = input3_textbox;
+            if(slot_value_substring==null){
+                slot_expression = slot_value;
+            }else{
+                // Query using substring
+                slot_expression = "'" + slot_value_substring + "'";
+            }
+        }         
+        filterExpression = collectionName + ":" + Fact_condition+"["+ Fact_number + "]," + slotName + ":"+ slot_expression;
+
+    }else{// not selected
+        return;
     }
 
-    return checkNeg(output,neg)
+    if(matchedArchIDs===null){
+        $.ajax({
+            url: "DrivingFeatureServlet",
+            type: "POST",
+            data: {ID: "applyFilter",filterExpression:filterExpression, preset:preset},
+            async: false,
+            success: function (data, textStatus, jqXHR)
+            {
+                matchedArchIDs = JSON.parse(data);
+            },
+            error: function (jqXHR, textStatus, errorThrown)
+            {alert("Error in applying the filter");}
+        });
+    }
+
+    if(option==="new"){
+        
+    }else if(option==="add"){
+        
+    }else if(option==="within"){
+        
+        
+    }
+    d3.selectAll('.dot')[0].forEach(function(d){
+        var id = d.__data__.ArchID;
+        if($.inArray(id,matchedArchIDs)!==-1){
+            d3.select(d).attr('class','dot_highlighted')
+                        .style("fill", "#0040FF");
+        }
+    });
+    
+
+    if(wrong_arg){
+    	alert("Invalid input argument");
+    }
+    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
 }
 
 
-function checkNeg(original,neg){
-	if(neg==true){
-		return !original;
-	}else{
-		return original;
-	}
-}
+
+
+
+//
+//
+//function applyFilter(filterType,filterInput){
+//    cancelDotSelections();
+//    var wrong_arg = false;
+//    var neg = false;
+//    if (filterType == "paretoFront"){
+//        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
+//        	var rank = parseInt(d3.select(d).attr("paretoRank"));
+//            if (rank <= +filterInput && rank >= 0){
+//                d3.select(d).attr("class", "dot_clicked")
+//                            .style("fill", "#0040FF");
+//            }
+//        });
+//
+//    }
+//    else if (filterType == "present" || filterType == "absent" || filterType == "inOrbit" || filterType == "notInOrbit" || filterType == "together" || filterType == "togetherInOrbit" || filterType == "separate" || 
+//            filterType == "emptyOrbit" || filterType=="numOrbits" || filterType=="subsetOfInstruments"||
+//            filtertype == "numOfInstruments"){
+//
+//        var unClickedArchs = d3.selectAll("[class=dot]")[0].forEach(function (d) {
+//            var bitString = d.__data__.bitString;
+//            var temp = presetFilter2(filterType,bitString,filterInputs,neg);
+//            if(temp==null){
+//            	wrong_arg = true;
+//            	return;
+//            }
+//            else if (temp){
+//                d3.select(d).attr("class", "dot_clicked")
+//                            .style("fill", "#0040FF");
+//            }
+//        });
+//    } else if(filterType == "defineNewFilter" || (filterType =="not_selected" && userDefFilters.length !== 0)){
+//        var filterExpression = d3.select("[id=filter_expression]").text();
+//        tmpCnt =0;
+//
+//        d3.selectAll("[class=dot]")[0].forEach(function(d){
+//        	
+//            var bitString = d.__data__.bitString;
+//            if(applyUserDefFilterFromExpression(filterExpression,bitString)){
+//                d3.select(d).attr("class", "dot_clicked")
+//                            .style("fill", "#0040FF");
+//            }
+//        });
+//
+//        d3.select("[id=saveFilter]").attr('disabled', null)
+//                                    .on("click",saveNewFilter);
+//    }
+//    else{
+//    	
+//        for(var k=0 ; k < userDefFilters.length; k++){
+//           if(userDefFilters[k].name == filterType){
+//                var filterExpression = userDefFilters[k].expression;
+//                d3.selectAll("[class=dot]")[0].forEach(function(d){
+//                    var bitString = d.__data__.bitString;
+//                    if(applyUserDefFilterFromExpression(filterExpression,bitString)){
+//                        d3.select(d).attr("class", "dot_clicked")
+//                                    .style("fill", "#0040FF");
+//                    }
+//                }); 
+//           } 
+//        }
+//    }
+//    if(wrong_arg){
+//    	alert("Invalid input argument");
+//    }
+//    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
+//}
+//   
+//   
+//   
+//   
+//   
+//   
+//   
+//   
+//   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+//
+//
+//function presetFilter2(filterName,bitString,inputs,neg){
+//    var filterInput1;
+//    var filterInput2;
+//    var filterInput3;
+//
+//    filterInput1 = inputs[0];
+//    if(inputs.length > 1){
+//        filterInput2 = inputs[1];
+//    }
+//    if(inputs.length > 2){
+//        filterInput3 = inputs[2];
+//    }
+//
+//    var output;
+//    var leng = bitString.length;
+//    var norb = orbitList.length;
+//    var ninstr = instrList.length;
+//
+//    if(filterName==="present"){
+//        filterInput1 = relabelback(filterInput1);
+//        var thisInstr = $.inArray(filterInput1,instrList);
+//        if(thisInstr==-1){
+//        	return null;
+//        }
+//        output = false;
+//        for(var i=0;i<orbitList.length;i++){
+//            if(bitString[ninstr*i+thisInstr]===true){
+//                output = true;
+//                break;
+//            }
+//        }
+//    } else if(filterName==="absent"){
+//        filterInput1 = relabelback(filterInput1);
+//        var thisInstr = $.inArray(filterInput1,instrList);
+//        if(thisInstr==-1){
+//        	return null;
+//        }
+//        output = true;
+//        for(var i=0;i<orbitList.length;i++){
+//            if(bitString[ninstr*i+thisInstr]===true){
+//                output = false;
+//                break;
+//            }
+//        }
+//    } else if(filterName==="inOrbit"){
+//        filterInput1 = relabelback(filterInput1);
+//        filterInput2 = relabelback(filterInput2);
+//        output = false;
+//        var thisOrbit = $.inArray(filterInput1,orbitList);
+//        var thisInstr = $.inArray(filterInput2,instrList);
+//        
+//        if(thisInstr==-1 || thisOrbit==-1){
+//        	return null;
+//        }
+//            if(bitString[thisOrbit*ninstr + thisInstr]===true){
+//                output = true;
+//            }
+//    } else if(filterName==="notInOrbit"){
+//        filterInput1 = relabelback(filterInput1);
+//        filterInput2 = relabelback(filterInput2);
+//        output = true;
+//        var thisOrbit = $.inArray(filterInput1,orbitList);
+//        var thisInstr = $.inArray(filterInput2,instrList);
+//        if(thisInstr==-1 || thisOrbit==-1){
+//        	return null;
+//        }
+//            if(bitString[thisOrbit*ninstr + thisInstr]===true){
+//                output = false;
+//            }
+//    } else if(filterName === "together"){
+//        output = false;
+//        var splitInstruments = filterInput1.split(",");
+//        var thisInstr1 = $.inArray(relabelback(splitInstruments[0]),instrList);
+//        var thisInstr2 = $.inArray(relabelback(splitInstruments[1]),instrList);
+//        var thisInstr3;
+//        if(splitInstruments.length===2){
+//            if(thisInstr1==-1 || thisInstr2==-1){
+//            	return null;
+//            }
+//            for(var i=0;i<norb;i++){
+//                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true){
+//                    output = true;
+//                    break;
+//                }
+//            }
+//        } else {
+//            thisInstr3 = $.inArray(relabelback(splitInstruments[2]),instrList);
+//            if(thisInstr1==-1 || thisInstr2==-1 || thisInstr3==-1){
+//            	return null;
+//            }
+//            for(var i=0;i<norb;i++){
+//                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true
+//                        && bitString[i*ninstr + thisInstr3] === true){
+//                    output = true;
+//                    break;
+//                }
+//            }
+//        }
+//    } else if(filterName === "togetherInOrbit"){
+//        output = false;
+//        var thisOrbit =  $.inArray(relabelback(filterInput1),orbitList);
+//        var splitInstruments = filterInput2.split(",");
+//        var thisInstr1 = $.inArray(relabelback(splitInstruments[0]),instrList);
+//        var thisInstr2 = $.inArray(relabelback(splitInstruments[1]),instrList);
+//        var thisInstr3;
+//        if(splitInstruments.length===2){
+//            if(thisInstr1==-1 || thisInstr2==-1 || thisOrbit==-1){
+//            	return null;
+//            }
+//            if(bitString[thisOrbit*ninstr + thisInstr1] === true && bitString[thisOrbit*ninstr + thisInstr2] === true){
+//                output = true;
+//            }
+//        } else {
+//            thisInstr3 = $.inArray(relabelback(splitInstruments[2]),instrList);
+//            if(thisInstr1==-1 || thisInstr2==-1 || thisInstr3==-1 || thisOrbit==-1){
+//            	return null;
+//            }
+//            if(bitString[thisOrbit*ninstr + thisInstr1] === true && bitString[thisOrbit*ninstr + thisInstr2] === true
+//                        && bitString[thisOrbit*ninstr + thisInstr3] === true){
+//                output = true;
+//            }
+//        }
+//    } else if(filterName ==="separate"){
+//        output = true;
+//        var splitInstruments = filterInput1.split(",");
+//        var thisInstr1 = $.inArray(relabelback(splitInstruments[0]),instrList);
+//        var thisInstr2 = $.inArray(relabelback(splitInstruments[1]),instrList);
+//        var thisInstr3;
+//        if(splitInstruments.length===2){
+//            if(thisInstr1==-1 || thisInstr2==-1){
+//            	return null;
+//            }
+//            for(var i=0;i<norb;i++){
+//                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true){
+//                    output = false;
+//                    break;
+//                }
+//            }
+//        } else {
+//            thisInstr3 = $.inArray(relabelback(splitInstruments[2]),instrList);
+//            if(thisInstr1==-1 || thisInstr2==-1 || thisInstr3==-1){
+//            	return null;
+//            }
+//            for(var i=0;i<norb;i++){
+//                if(bitString[i*ninstr + thisInstr1] === true && bitString[i*ninstr + thisInstr2] === true
+//                        && bitString[i*ninstr + thisInstr3] === true){
+//                    output = false;
+//                    break;
+//                }
+//            }
+//        }
+//    } else if(filterName ==="emptyOrbit"){
+//        var thisOrbit =  $.inArray(relabelback(filterInput1),orbitList);
+//        if(thisOrbit==-1){
+//        	return null;
+//        }
+//        output = true;
+//        for(var i=0;i<ninstr;i++){
+//            if(bitString[thisOrbit*ninstr + i]===true){
+//                output=false;
+//                break;
+//            }
+//        }
+//    } else if(filterName ==="numOrbits"){
+//        var numOrbits = filterInput1;
+//        if(numOrbits > 5 || numOrbits < 0){
+//        	return null;
+//        }
+//        var cnt = 0;
+//        for (var i=0;i<norb;i++){
+//            for (var j=0;j<ninstr;j++){
+//                if(bitString[i*ninstr+j]==true){
+//                    cnt++;
+//                    break;
+//                }
+//            }
+//        }
+//        if(cnt==numOrbits){
+//            output = true;
+//        } else{
+//            output= false;
+//        }  
+//        
+//    } else if(filterName === "numOfInstruments"){
+//        output = false;
+//
+//        var all_instruments = false;
+//        var thisInstr = -1;
+//        
+//        var instrument;
+//        var num_of_instruments;
+//        if(filterInput1.indexOf(",") != -1){
+//        	var comma = filterInput1.indexOf(",");
+//        	instrument = filterInput1.substring(0,comma);
+//        	num_of_instruments = filterInput1.substring(comma+1);
+//        }else{
+//        	instrument = filterInput1;
+//        	num_of_instruments = filterInput2;
+//        }
+//        
+//        if(instrument=="N/A"){
+//        	//continue;
+//        	all_instruments = true;
+//        }
+//        else{
+//            thisInstr = $.inArray(relabelback(instrument),instrList);
+//            if(thisInstr==-1){
+//            	return null;
+//            }
+//        }        
+//        var cnt = 0;
+//        for(var i=0;i<orbitList.length;i++){
+//        	if(all_instruments){
+//        		for(var j=0;j<instrList.length;j++){
+//                	if(bitString[i*ninstr + j] === true){
+//                        cnt = cnt+1;
+//                    }
+//        		}
+//        	}else{
+//            	if(bitString[i*ninstr + thisInstr] === true){
+//                    cnt = cnt+1;
+//                }
+//        	}
+//        }
+//
+//            
+//        if(num_of_instruments== ""+cnt){
+//        	output=true;
+//        }else{
+//        	output=false;
+//        }
+//        return checkNeg(output,neg)     
+//        
+//    } else if(filterName === "subsetOfInstruments"){ 
+//        var thisOrbit = $.inArray(relabelback(filterInput1),orbitList);
+//        var minmax = filterInput2.split(",");
+//        var instruments = filterInput3.split(",");
+//
+//        var constraint = minmax.length;
+//        var numOfInstr = instruments.length;
+//
+//        var min,max;
+//        if(constraint===1){ // only the minimum number of instruments is typed in
+//            min = minmax[0];
+//            max = 100;
+//        } else if(constraint===2){
+//            min = minmax[0];
+//            max = minmax[1];
+//        }
+//
+//        var size = instruments.length;
+//        var cnt=0;
+//
+//        for(var i=0;i<size;i++){ //var thisInstr1 = $.inArray(splitInstruments[0],instrList);
+//            var thisInstr = $.inArray(relabelback(instruments[i]),instrList);
+//            if(bitString[thisOrbit*ninstr + thisInstr]===true){
+//                cnt++;
+//            }
+//        }
+//        if(cnt <= max && cnt >= min){
+//            output = true;
+//        }else{
+//            output = false;
+//        }
+//    }
+//
+//    return checkNeg(output,neg)
+//}
+//

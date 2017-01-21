@@ -72,8 +72,8 @@ public class JessExpressionAnalyzer {
                 if (level == focusLevel)  parenLoc.add(i);
             }
             if(inputString.charAt(i) == ')' ){
-                level--;
                 if (level == focusLevel) parenLoc.add(i);
+                level--;
             }
         }
         return parenLoc;
@@ -165,7 +165,7 @@ public class JessExpressionAnalyzer {
     
     /**
      * This function replaces the contents of all parentheses with a character 'X'.
-     * This is used to analyze the outermost structure of the given expression (by removing all nexted structure).
+     * This is used to analyze the outermost structure of the given expression (by removing all nested structure).
      * @param inputExpression
      * @return 
      */

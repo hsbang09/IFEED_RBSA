@@ -5,91 +5,120 @@
  */
 
 
-function relabel(input){  
+var orbitList_displayName = ["1000","2000","3000","4000","5000"];
+var instrList_displayName = ["A","B","C","D","E","F","G","H","I","J","K","L"];
 
-    var newOrbitList = ["1000","2000","3000","4000","5000"];
-    var newInstrList = ["A","B","C","D","E","F","G","H","I","J","K","L"];
-
-    if(input.indexOf("-")!==-1){
-        var nth = $.inArray(input,orbitList);
-        if(nth==-1){
-            return input;
-        }
-        return newOrbitList[nth];
-    } else if(input.indexOf("_")!==-1){
-        var nth = $.inArray(input,instrList);
-        if(nth==-1){
-            return input;
-        }
-        return newInstrList[nth];
-    } else{
-//        console.log("could not find orbit or instrument name: " + input);
-        return input;
-//                        error("could not find orbit or instrument name");
+/*
+ * @param {int} index: Number indicating either an oribt or an instrument
+ * @param {String} type: Type of the input name. Could be either "orbit" or "instrument"
+ * @returns The actual name of an instrument or an orbit
+ */
+function Index2ActualName(index, type){
+    if(type=="orbit"){
+        return orbitList[index];
+    }else if(type=="instrument"){
+        return instrList[index];
+    }else{
+        return "Naming Error"
     }
 }
-//        A          B         C          D         E        F
-// {"ACE_ORCA","ACE_POL","ACE_LID","CLAR_ERB","ACE_CPR","DESD_SAR",
-//       G        H           I            J         K              L
-// "DESD_LID","GACM_VIS","GACM_SWIR","HYSP_TIR","POSTEPS_IRS","CNES_KaRIN"};
-//{"LEO-600-polar-NA","SSO-600-SSO-AM","SSO-600-SSO-DD","SSO-800-SSO-DD","SSO-800-SSO-PM"};
 
-function relabelback(input){   // has to match with the method in Scheme.java
+/*
+ * @param {int} index: Number indicating either an orbit or an instrument
+ * @param {String} type: Type of the variable. Could be either "orbit" or "instrument"
+ */
+function Index2DisplayName(index, type){
+    if(type=="orbit"){
+        return orbitList_displayName[index];
+    }else if(type=="instrument"){
+        return instrList_displayName[index];
+    }else{
+        return "Naming Error";
+    }
+}
 
-    var newOrbitList = ["1000","2000","3000","4000","5000"];
-    var newInstrList = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+function ActualName2Index(name, type){
+    var name=name.trim();
+    if(type=="orbit"){
+        return $.inArray(name,orbitList);
+    }else if(type=="instrument"){
+        return $.inArray(name,instrList);
+    }else{
+        return "Naming Error";
+    }
+}
 
-    if(input.indexOf("000")!==-1){
-        var nth = $.inArray(input,newOrbitList);
-        if(nth==-1){
-            return input;
+
+function DisplayName2Index(name, type){
+    var name=name.trim();
+    if(type=="orbit"){
+        return $.inArray(name,orbitList_displayName);
+    }else if(type=="instrument"){
+        return $.inArray(name,instrList_displayName);
+    }else{
+        return "Naming Error";
+    }
+}
+
+
+
+function ActualName2DisplayName(name,type){
+    var name = name.trim();
+    if(type=="orbit"){
+        var nth = $.inArray(name,orbitList);
+        if(nth==-1){// Couldn't find the name from the list
+            return name;
+        }
+        return orbitList_displayName[nth];
+    } else if(type=="instrument"){
+        var nth = $.inArray(name,instrList);
+        if(nth==-1){ // Couldn't find gthe name from the list
+            return name;
+        }
+        return instrList_displayName[nth];
+    } else{
+        return name;
+    }
+}
+
+
+function DisplayName2ActualName(name,type){
+    var name = name.trim();
+    if(type=="orbit"){
+        var nth = $.inArray(name,orbitList_displayName);
+        if(nth==-1){// Couldn't find the name from the list
+            return name;
         }
         return orbitList[nth];
-    } else if(input.length===1) {
-    	input = input.toUpperCase();
-        var nth = $.inArray(input,newInstrList);
-        if(nth==-1){
-            return input;
+    } else if(type=="instrument"){
+        var nth = $.inArray(name,instrList_displayName);
+        if(nth==-1){ // Couldn't find gthe name from the list
+            return name;
         }
         return instrList[nth];
     } else{
-        return input;
-    }
-}   
-
-
-
-function relabelDrivingFeatureName(name){
-    var open = name.indexOf("[");
-    var close = name.indexOf("]");
-    var type = name.substring(0,open);
-    var name_tmp = name.substring(open+1,close);
-    var output = "";
-    var first = true;
-    
-    while(true){
-        if(name_tmp.indexOf(",")===-1){
-            if(first){
-                name_tmp = name_tmp.trim();
-                output = output + relabel(name_tmp);
-            }else{
-                name_tmp = name_tmp.trim();
-                output = output + relabel(name_tmp);
-            }
-            break;
-        } else {
-            var tmp = name_tmp.substring(0,name_tmp.indexOf(","));
-            tmp = tmp.trim();
-            output = output  + relabel(tmp) + ",";
-            name_tmp = name_tmp.substring(name_tmp.indexOf(",")+1);
-            first = false;
-        } 
-    }
-    output = type + "[" + output + "]";
-    
-    if(output==="[]"){
         return name;
     }
-    
-    return output;
+}
+
+
+//        A          B         C          D         E        F
+// {"ACE_ORCA","ACE_POL","ACE_LID","CLAR_ERB","ACE_CPR","DESD_SAR",
+// 
+//       G        H           I            J         K              L
+// "DESD_LID","GACM_VIS","GACM_SWIR","HYSP_TIR","POSTEPS_IRS","CNES_KaRIN"};
+// 
+//      1000                2000            3000        4000            5000
+//{"LEO-600-polar-NA","SSO-600-SSO-AM","SSO-600-SSO-DD","SSO-800-SSO-DD","SSO-800-SSO-PM"};
+
+
+
+function Name2Index(name,type){
+    var name = name.trim();
+    var temp = DisplayName2Index(name,type);
+    if(name!=temp+""){
+        return temp;
+    }else{
+        return ActualName2Index(name,type);
+    }
 }

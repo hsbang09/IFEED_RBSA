@@ -65,7 +65,7 @@ function df_scope_selection_dropdown_1(){
 
     if(selectedScope==="not_selected"){return;}
     if(selectedScope==="design_input"){
-        append_df_button('preset_filters');
+        append_df_button('input_variables');
     }else if(selectedScope==="objective"){
         
         var dropdown = d3.select('#df_scope_selection_div')
@@ -146,7 +146,7 @@ function df_scope_selection_dropdown_objectives(){
 function df_scope_selection_dropdown_science(){
     remove_df_scope_selection(3);
     
-    var scope = d3.select('#filter_options_dropdown_3')[0][0].value;
+    var scope = d3.select('#df_scope_selection_dropdown_3')[0][0].value;
     var collectionName;
     if(scope==="not_selected"){
         return;
@@ -198,13 +198,13 @@ function runDataMining(scope) {
     nonSelectedBitStrings.length=0;
 
     for (var i = 0; i < numOfSelectedArchs; i++) {
-        selectedBitStrings.push(selectedArchs[0][i].__data__.bitString);
+        selectedBitStrings.push(selectedArchs[0][i].__data__.ArchID);
     }
     for (var i = 0; i < numOfNonSelectedArchs; i++) {
-        nonSelectedBitStrings.push(nonSelectedArchs[0][i].__data__.bitString);
+        nonSelectedBitStrings.push(nonSelectedArchs[0][i].__data__.ArchID);
     }
 
-    sortedDFs = generateDrivingFeatures(selectedBitStrings,nonSelectedBitStrings,scope,
+    sortedDFs = generateDrivingFeatures(scope,selectedBitStrings,nonSelectedBitStrings,
                             support_threshold,confidence_threshold,lift_threshold,"lift");
     
     
@@ -212,14 +212,14 @@ function runDataMining(scope) {
     
     
     
-    
-    display_drivingFeatures(sortedDFs,"lift");
-    if(testType=="3"){
-        jsonObj_tree = buildClassificationTree();
-        display_classificationTree(jsonObj_tree);
-    }
-
-    selection_changed = false;
+//    
+//    display_drivingFeatures(sortedDFs,"lift");
+//    if(testType=="3"){
+//        jsonObj_tree = buildClassificationTree();
+//        display_classificationTree(jsonObj_tree);
+//    }
+//
+//    selection_changed = false;
 
 
 }
@@ -232,7 +232,7 @@ function runDataMining(scope) {
 
 
 
-function generateDrivingFeatures(selected,nonSelected,scope,
+function generateDrivingFeatures(scope,selected,nonSelected,
 		support_threshold,confidence_threshold,lift_threshold,
 		sortBy){
 	

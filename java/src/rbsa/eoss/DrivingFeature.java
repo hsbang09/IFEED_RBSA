@@ -13,34 +13,26 @@ package rbsa.eoss;
 public class DrivingFeature{
         
         private String name; // specific names
-        private String type; // inOrbit, together, separate, present, absent, etc.
-        private String[] param;
+        private String expression; // inOrbit, together, separate, present, absent, etc.
         private boolean preset;
         private double[] metrics;
         
 
-        public DrivingFeature(String name, String type){
+        public DrivingFeature(String name, String expression){
             this.name = name;
-            this.type = type;
+            this.expression=expression;
             this.preset = false;
         }
-        public DrivingFeature(String name, String type, double[] metrics){
+        public DrivingFeature(String name, String expression, double[] metrics, boolean preset){
             this.name = name;
-            this.type = type;
+            this.expression = expression;
             this.metrics = metrics;
             this.preset = false;
         }
-        public DrivingFeature(String name, String type, String[] param, double[] metrics){
-            this.name = name;
-            this.type = type;
-            this.param = param;
-            this.metrics= metrics;
-            this.preset = true;
-        }
-        public String getType(){return type;}
+
+        public String getExpression(){return expression;}
         public String getName(){return name;}
         public double[] getMetrics(){return metrics;}
-        public String[] getParam(){return param;}
         public boolean isPreset(){return preset;}
         
     }
