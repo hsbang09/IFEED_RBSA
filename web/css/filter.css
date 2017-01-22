@@ -4,6 +4,7 @@
 #filter_application_status (div)
     #applied_filter_1 .applied_filter (div)
         .filter_application_activate
+        .filter_application_logical_connective
         .filter_application_expression
         .filter_application_delete
 #filter_options (div)
