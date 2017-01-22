@@ -708,6 +708,7 @@ function filter_options_dropdown_attribute(collectionName, slotName){
     d3.selectAll('.filter_inputs_div').remove();
     d3.selectAll('.filter_hints_div').remove();
     
+    filter_input_num_instances();
     var slotClass = get_class_of_slot(collectionName,slotName);
     if(slotClass.includes("String")){
         filter_input_String(collectionName,slotName);
@@ -716,24 +717,18 @@ function filter_options_dropdown_attribute(collectionName, slotName){
     }
 }
 
-function filter_input_String(collectionName, slotName){
-    
-    var validList = get_valid_value_list(collectionName,slotName);   
-    var value_options = [{value:"not_selected",text:"Select value"}];
-    for(var i=0;i<validList.length;i++){
-        var val = validList[i];
-        value_options.push({value:val,text:val});
-    }    
+
+function filter_input_num_instances(){
     
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
                     {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
-    
     
     d3.select("#filter_inputs")
             .append("div")
             .attr("id","filter_inputs_div_1")
             .attr('class','filter_inputs_div')
             .append('div')
+            .attr('class','filter_inputs_supporting_comments_begin')
             .text("Select all designs that contain ");
     
     d3.select('#filter_inputs_div_1')
@@ -752,7 +747,6 @@ function filter_input_String(collectionName, slotName){
             .text(function(d){
                 return d.text;
             });  
-            
     d3.select('#filter_inputs_div_1')
             .append("input")
             .attr("class","filter_inputs_textbox")  
@@ -760,13 +754,36 @@ function filter_input_String(collectionName, slotName){
     
     d3.select('#filter_inputs_div_1')
             .append('div')
+            .attr('class','filter_inputs_supporting_comments_end')
             .text(' instances of facts');
     
+}
+
+
+
+
+
+function filter_input_String(collectionName, slotName){
+    
+    var validList = get_valid_value_list(collectionName,slotName);   
+    var value_options = [{value:"not_selected",text:"Select value"}];
+    for(var i=0;i<validList.length;i++){
+        var val = validList[i];
+        value_options.push({value:val,text:val});
+    }    
+    
+    var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
+                    {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
+    
+
     d3.select("#filter_inputs")
             .append("div")
             .attr("id","filter_inputs_div_2")
             .attr('class','filter_inputs_div')
-            .text("which have slot values that are ")
+            .append('div')
+            .attr('class','filter_inputs_supporting_comments_begin')
+            .text("which have slot values that are ");
+    d3.select('#filter_inputs_div_2')
             .append('select')
             .attr('class','filter_inputs_select');
             
@@ -783,14 +800,25 @@ function filter_input_String(collectionName, slotName){
                 return d.text;
             }); 
             
-    d3.select("#filter_inputs")
+            
+    d3.select("#filter_inputs_div_2")
             .append("div")
-            .attr("id","filter_inputs_div_3")
-            .attr('class','filter_inputs_div')
-            .text("Or include a substring ")
+            .attr("class","filter_inputs_supporting_comments_end")
+            .text("Or include a substring ");
+    d3.select('#filter_inputs_div_2')
             .append("input")
             .attr("class","filter_inputs_textbox")  
             .attr("type","text");  
+    
+    
+//    d3.select("#filter_inputs")
+//            .append("div")
+//            .attr("id","filter_inputs_div_3")
+//            .attr('class','filter_inputs_div')
+//            .text("Or include a substring ")
+//            .append("input")
+//            .attr("class","filter_inputs_textbox")  
+//            .attr("type","text");  
             
     d3.select("#filter_hints")
                 .append("div")
@@ -807,40 +835,6 @@ function filter_input_Double(collectionName,slotName){
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
                     {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];
     
-   
-    d3.select("#filter_inputs")
-            .append("div")
-            .attr("id","filter_inputs_div_1")
-            .attr('class','filter_inputs_div')
-            .append('div')
-            .text("Select all designs that contain ");
-    
-    d3.select('#filter_inputs_div_1')
-            .append('select')
-            .attr('class','filter_inputs_select');
-            
-    d3.select('#filter_inputs_div_1')
-            .select('select')
-            .selectAll("option")
-            .data(condition_options)
-            .enter()
-            .append("option")
-            .attr("value",function(d){
-                return d.value;
-            })
-            .text(function(d){
-                return d.text;
-            });  
-            
-    d3.select('#filter_inputs_div_1')
-            .append("input")
-            .attr("class","filter_inputs_textbox")  
-            .attr("type","text");  
-    
-    d3.select('#filter_inputs_div_1')
-            .append('div')
-            .text(' instances of facts');
-
    
     d3.select("#filter_inputs")
             .append("div")
@@ -871,11 +865,7 @@ function filter_input_Double(collectionName,slotName){
                 .attr("id","filter_hints_div_1")
                 .attr('class','filter_hints_div')
                 .text("(Max value: +"+ max_val +", min value: "+ min_val +")");
-    d3.select("#filter_hints")
-                .append("div")
-                .attr("id","filter_hints_div_2")
-                .attr('class','filter_hints_div')
-                .text("(Hint:)");        
+      
 }
 
 

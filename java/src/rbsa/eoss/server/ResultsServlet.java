@@ -178,7 +178,12 @@ public class ResultsServlet extends HttpServlet {
             ArrayList<org.bson.Document> docs = dbm.getMetadata();
             ArrayList<Architecture> archArray = new ArrayList<>();
             for(org.bson.Document doc:docs){
-                double id = (double) doc.get("ArchID");
+                double id;
+                if(doc.get("ArchID").getClass().toString().contains("Integer")){
+                    id = Double.parseDouble(Integer.toString((int) doc.get("ArchID")));
+                }else{
+                    id = (double) doc.get("ArchID");
+                }
                 double science = (double) doc.get("science");
                 double cost = (double) doc.get("cost");
                 String booleanString = (String) doc.get("bitString");

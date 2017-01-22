@@ -122,65 +122,70 @@ public class FilterExpressionHandler {
             String collectionNumber = collectionArguments.split("\\[")[1];
             collectionNumber = collectionNumber.substring(0,collectionNumber.length()-1);
             
-            String slotExpression = exp.split(",",2)[1];
-            String slotName = slotExpression.split(":")[0];
-            String slotArguments = slotExpression.split(":")[1];
-                        
+            String multiple_slotExpression = exp.split(",",2)[1];
+            String[] multiple_slotExpression_split = multiple_slotExpression.split(",");
+            
+            
             ArrayList<String> slotNames = new ArrayList<>();
             ArrayList<String> conditions = new ArrayList<>();
             ArrayList<String> values = new ArrayList<>();
             ArrayList<String> valueTypes = new ArrayList<>();
+
+            for(String slotExpression:multiple_slotExpression_split){
+
+                String slotName = slotExpression.split(":")[0];
+                String slotArguments = slotExpression.split(":")[1];
+
+                // Set up conditions to make a query
+                if(slotArguments.startsWith("[")){ // Numeric argument
+                    // Remove square brackets
+                    slotArguments = slotArguments.substring(1,slotArguments.length()-1); 
+
+                    if(slotArguments.contains(";")){
+                        // Range given
+                        String[] argSplit = slotArguments.split(";");
+                        if(argSplit[0].isEmpty()){ // Only max value specified
+                            slotNames.add(slotName);
+                            conditions.add("lt");
+                            values.add(argSplit[1]);
+                            valueTypes.add("Double");
+                        }else if(argSplit.length==1){ // Only min value specified
+                            slotNames.add(slotName);
+                            conditions.add("gt");
+                            values.add(argSplit[0]);
+                            valueTypes.add("Double");
+                        }else{ // Both min and max values specified
+                            slotNames.add(slotName);
+                            conditions.add("gt");
+                            values.add(argSplit[0]);
+                            valueTypes.add("Double");
+                            slotNames.add(slotName);
+                            conditions.add("lt");
+                            values.add(argSplit[1]);
+                            valueTypes.add("Double");                            
+                        }
+                    }else{
+                        // Exact value given
+                            slotNames.add(slotName);
+                            conditions.add("eq");
+                            values.add(slotArguments);
+                            valueTypes.add("Double");
+                    }
+                }else{ // String argument
+                    if(slotArguments.startsWith("'")){
+                        // Search using regex
+                        conditions.add("regex");
+                        slotArguments = slotArguments.substring(1,slotArguments.length()-1);
+                    }else{
+                        conditions.add("eq");
+                    }
+                    slotNames.add(slotName);
+                    values.add(slotArguments);
+                    valueTypes.add("String");
+                }
+            }
             
 
-            // Set up conditions to make a query
-            if(slotArguments.startsWith("[")){ // Numeric argument
-                // Remove square brackets
-                slotArguments = slotArguments.substring(1,slotArguments.length()-1); 
-
-                if(slotArguments.contains(";")){
-                    // Range given
-                    String[] argSplit = slotArguments.split(";");
-                    if(argSplit[0].isEmpty()){ // Only max value specified
-                        slotNames.add(slotName);
-                        conditions.add("lt");
-                        values.add(argSplit[1]);
-                        valueTypes.add("Double");
-                    }else if(argSplit.length==1){ // Only min value specified
-                        slotNames.add(slotName);
-                        conditions.add("gt");
-                        values.add(argSplit[0]);
-                        valueTypes.add("Double");
-                    }else{ // Both min and max values specified
-                        slotNames.add(slotName);
-                        conditions.add("gt");
-                        values.add(argSplit[0]);
-                        valueTypes.add("Double");
-                        slotNames.add(slotName);
-                        conditions.add("lt");
-                        values.add(argSplit[1]);
-                        valueTypes.add("Double");                            
-                    }
-                }else{
-                    // Exact value given
-                        slotNames.add(slotName);
-                        conditions.add("eq");
-                        values.add(slotArguments);
-                        valueTypes.add("Double");
-                }
-            }else{ // String argument
-                if(slotArguments.startsWith("'")){
-                    // Search using regex
-                    conditions.add("regex");
-                    slotArguments = slotArguments.substring(1,slotArguments.length()-1);
-                }else{
-                    conditions.add("eq");
-                }
-                slotNames.add(slotName);
-                values.add(slotArguments);
-                valueTypes.add("String");
-            }
-                
-                
             // Make a query on Facts and get the ID's of architectures that contain those Facts
             ArrayList<Integer> matchedArchIDs_slot = dbq.makeQuery_ArchID(collectionName, slotNames, conditions, values, valueTypes);
 
