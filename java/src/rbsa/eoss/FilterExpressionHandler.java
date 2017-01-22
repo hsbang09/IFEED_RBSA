@@ -61,15 +61,39 @@ public class FilterExpressionHandler {
         
         ArrayList<Integer> matchedArchIDs = new ArrayList<>();
         String exp = inputExpression.substring(1,inputExpression.length()-1);
-        
+                
         if(preset){
             String presetName = exp.split("\\[")[0];
             String arguments = exp.substring(0,exp.length()-1).split("\\[")[1];
-            String[] argSplit = arguments.split(";");
-            String[] orbits = argSplit[0].split(",");
-            String[] instruments = argSplit[1].split(",");
-            String[] numbers = argSplit[2].split(",");
             
+            System.out.println("Arguments: "+arguments);
+            
+            String[] argSplit = arguments.split(";");
+            String[] orbits = new String[1];
+            String[] instruments = new String[1];
+            String[] numbers = new String[1];
+            
+            if(argSplit.length>0){
+                orbits = argSplit[0].split(",");
+            }
+            if(argSplit.length>1){
+                instruments = argSplit[1].split(",");
+            }
+            if(argSplit.length>2){
+                numbers = argSplit[2].split(",");
+            }
+            
+//            for(int i=0;i<orbits.length;i++){
+//                System.out.println("orbit" + i + ": " + orbits[i]);
+//            }
+//            for(int i=0;i<instruments.length;i++){
+//                System.out.println("instruments" + i + ": " + instruments[i]);
+//            }            
+//            for(int i=0;i<numbers.length;i++){
+//                System.out.println("numbers" + i + ": " + numbers[i]);
+//            }
+
+
             ArrayList<org.bson.Document> docs = dbq.getMetadata();
             for(org.bson.Document doc:docs){
                 int ArchID = doc.get("ArchID",Double.class).intValue();

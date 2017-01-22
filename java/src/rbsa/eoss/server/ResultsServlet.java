@@ -178,7 +178,7 @@ public class ResultsServlet extends HttpServlet {
             ArrayList<org.bson.Document> docs = dbm.getMetadata();
             ArrayList<Architecture> archArray = new ArrayList<>();
             for(org.bson.Document doc:docs){
-                int id = (int) doc.get("ArchID");
+                double id = (double) doc.get("ArchID");
                 double science = (double) doc.get("science");
                 double cost = (double) doc.get("cost");
                 String booleanString = (String) doc.get("bitString");
@@ -587,7 +587,7 @@ public class ResultsServlet extends HttpServlet {
     
     
     class Architecture{
-        private int ArchID;
+        private double ArchID;
         private String bitString;
         private double science;
         private double cost;
@@ -595,7 +595,7 @@ public class ResultsServlet extends HttpServlet {
         public Architecture(){
         }
         
-        public Architecture(int id, double science,double cost, String bitString){
+        public Architecture(double id, double science,double cost, String bitString){
             this.ArchID = id;
             this.science = science;
             this.cost = cost;

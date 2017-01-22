@@ -319,8 +319,6 @@ and open the template in the editor.
             // Metadata
             var orbitList = [];
             var instrList = [];
-            var relabeledOrbitList = [];
-            var relabeledInstrList = [];
             var ninstr, norb;
 
             // Scatter plot variables
@@ -412,12 +410,6 @@ and open the template in the editor.
                         });
                         orbitList = getOrbitList();
                         instrList = getInstrumentList();  
-                        for(var i=0;i<orbitList.length;i++){
-                                relabeledOrbitList.push(relabel(orbitList[i]));
-                        }
-                        for(var i=0;i<instrList.length;i++){
-                                relabeledInstrList.push(relabel(instrList[i]));
-                        }
             }
             
             
@@ -561,7 +553,8 @@ and open the template in the editor.
                             }
                         })
                         .text(function (d) {
-                            return relabel(d.content);
+                            var type = d.type;
+                            return ActualName2DisplayName(d.content,type);
                         })
                         .style("font-size", "13px");
 

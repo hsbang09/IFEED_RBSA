@@ -12,7 +12,7 @@
 
 function open_df_scope_selection(){
     
-    document.getElementById('tab3').click();
+    //document.getElementById('tab3').click();
     highlight_basic_info_box()
     
     d3.select("#basicInfoBox_div").select("#view3").select("g").remove();

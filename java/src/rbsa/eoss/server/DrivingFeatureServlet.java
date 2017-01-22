@@ -283,21 +283,20 @@ public class DrivingFeatureServlet extends HttpServlet {
             String filterExpression_raw = request.getParameter("filterExpression");
             String preset = request.getParameter("preset");
 
-            filterExpression_raw = filterExpression_raw.substring(1,filterExpression_raw.length());
-            
-            System.out.println(filterExpression_raw);
-            System.out.println(preset);
-            
+            String filterExpression = "{"+filterExpression_raw+"}";
+            boolean isPreset = false;
+            if(preset.equalsIgnoreCase("true")){
+                isPreset = true;
+            }
             
             FilterExpressionHandler feh = new FilterExpressionHandler();
-            ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(filterExpression_raw, false);
+            ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(filterExpression, isPreset);
             String jsonObj = gson.toJson(matchedArchIDs);
             outputString = jsonObj;            
         }
 
         else if(requestID.equalsIgnoreCase("applyComplexFilter")){
             String filterExpression_raw = request.getParameter("filterExpression");
-            filterExpression_raw = filterExpression_raw.substring(1,filterExpression_raw.length());
             System.out.println(filterExpression_raw);
             FilterExpressionHandler feh = new FilterExpressionHandler();
             ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(filterExpression_raw, new ArrayList<Integer>(), "||");

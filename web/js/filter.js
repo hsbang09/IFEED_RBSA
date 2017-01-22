@@ -407,7 +407,7 @@ function append_filterInputField_orbitAndInstInput(){
             .attr('class','filter_inputs_div')
             .text("Input single instrument name: ")
             .append("input")
-            .attr("class","filter_inputs_textobx")
+            .attr("class","filter_inputs_textbox")
             .attr("type","text");
     
 }
@@ -1060,6 +1060,7 @@ function applyFilter(option){
     }
 
     if(matchedArchIDs===null){
+        update_filter_application_status(filterExpression,option);
         $.ajax({
             url: "DrivingFeatureServlet",
             type: "POST",
@@ -1075,7 +1076,6 @@ function applyFilter(option){
     }
 
     if(option==="new"){
-        update_filter_application_status(filterExpression,option);
         cancelDotSelections();
         d3.selectAll('.dot')[0].forEach(function(d){
             var id = d.__data__.ArchID;
@@ -1085,7 +1085,6 @@ function applyFilter(option){
             }
         });
     }else if(option==="add"){
-        update_filter_application_status(filterExpression,option);
         d3.selectAll('.dot')[0].forEach(function(d){
             var id = d.__data__.ArchID;
             if($.inArray(id,matchedArchIDs)!==-1){
@@ -1094,7 +1093,6 @@ function applyFilter(option){
             }
         });
     }else if(option==="within"){
-        update_filter_application_status(filterExpression,option);
         d3.selectAll('.dot_highlighted')[0].forEach(function(d){
             var id = d.__data__.ArchID;
             if($.inArray(id,matchedArchIDs)===-1){
@@ -1166,13 +1164,13 @@ function update_filter_application_status(inputExpression,option){
         thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
     }
     
-    d3.select(thisFilter).select(".filter_application_delete").on("click",function(d){
-        d3.select(thisFilter).remove();
+    thisFilter.select(".filter_application_delete").on("click",function(d){
+        thisFilter.remove();
     });
     
-    d3.select(thisFilter).select('.filter_application_active').on("click",function(d){
+    thisFilter.select('.filter_application_active').on("click",function(d){
         var activated = d3.select(d)[0][0].checked;
-        d3.select(thisFilter).select('.filter_application_expression').style("color",function(d){
+        thisFilter.select('.filter_application_expression').style("color",function(d){
             if(activated){
                 return "#000000"; //black
             }else{
