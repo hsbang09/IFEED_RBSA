@@ -198,77 +198,83 @@ public class DrivingFeatureServlet extends HttpServlet {
             ArrayList<DrivingFeature> DFs;
             DFs = dfsGen.getDrivingFeatures();
             
-            String sortingCriteria = request.getParameter("sortBy");
-            ArrayList<DrivingFeature> sortedDFs;
-            sortedDFs = new ArrayList<>();
-            for (DrivingFeature df:DFs){
-            
-                double value = 0.0;
-                double maxVal = 1000000.0;
-                double minVal = -1.0;
-                
-                if (sortedDFs.isEmpty()){
-                    sortedDFs.add(df);
-                    continue;
-                } 
-                
-                if(sortingCriteria.equalsIgnoreCase("lift")){
-                    value = df.getMetrics()[1];
-                    maxVal = sortedDFs.get(0).getMetrics()[1];
-                    minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[1];
-                } else if(sortingCriteria.equalsIgnoreCase("supp")){
-                    value = df.getMetrics()[0];
-                    maxVal = sortedDFs.get(0).getMetrics()[0];
-                    minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[0];
-                } else if(sortingCriteria.equalsIgnoreCase("confave")){
-                    value = (double) (df.getMetrics()[2] + df.getMetrics()[3])/2;
-                    maxVal = (double) (sortedDFs.get(0).getMetrics()[2] + sortedDFs.get(0).getMetrics()[3])/2;
-                    minVal = (double) (sortedDFs.get(sortedDFs.size()-1).getMetrics()[2] + sortedDFs.get(sortedDFs.size()-1).getMetrics()[3])/2;
-                } else if(sortingCriteria.equalsIgnoreCase("conf1")){
-                    value = df.getMetrics()[2];
-                    maxVal = sortedDFs.get(0).getMetrics()[2];
-                    minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[2];
-                } else if(sortingCriteria.equalsIgnoreCase("conf2")){
-                    value = df.getMetrics()[3];
-                    maxVal = sortedDFs.get(0).getMetrics()[3];
-                    minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[3];
-                }
-                
-                if (value >= maxVal){
-                    sortedDFs.add(0,df);
-                } else if(value <= minVal){
-                    sortedDFs.add(df);
-                } else {
-                        for (int j=0;j<sortedDFs.size();j++){
-                            
-                            double refval = 0.0;
-                            double refval2 = 0.0;
-                            if(sortingCriteria.equalsIgnoreCase("lift")){
-                                refval = sortedDFs.get(j).getMetrics()[1];
-                                refval2 = sortedDFs.get(j+1).getMetrics()[1];
-                            } else if(sortingCriteria.equalsIgnoreCase("supp")){
-                                refval = sortedDFs.get(j).getMetrics()[0];
-                                refval2 = sortedDFs.get(j+1).getMetrics()[0];
-                            } else if(sortingCriteria.equalsIgnoreCase("confave")){
-                                refval = (double) (sortedDFs.get(j).getMetrics()[2] + sortedDFs.get(j).getMetrics()[3])/2;
-                                refval2 = (double) (sortedDFs.get(j+1).getMetrics()[2] + sortedDFs.get(j+1).getMetrics()[3])/2;
-                            } else if(sortingCriteria.equalsIgnoreCase("conf1")){
-                                refval = sortedDFs.get(j).getMetrics()[2];
-                                refval2 = sortedDFs.get(j+1).getMetrics()[2];
-                            } else if(sortingCriteria.equalsIgnoreCase("conf2")){
-                                refval = sortedDFs.get(j).getMetrics()[3];
-                                refval2 = sortedDFs.get(j+1).getMetrics()[3];
-                            }
-                            
-                            if(value <= refval && value > refval2){
-                                sortedDFs.add(j+1,df);
-                                break;
-                            }
-                        } 
-                }
+            if(DFs.size()==0){
+                outputString="";
             }
-            String jsonObj = gson.toJson(sortedDFs);
-            outputString = jsonObj;
+            else{
+                String sortingCriteria = request.getParameter("sortBy");
+                ArrayList<DrivingFeature> sortedDFs;
+                sortedDFs = new ArrayList<>();
+                for (DrivingFeature df:DFs){
+
+                    double value = 0.0;
+                    double maxVal = 1000000.0;
+                    double minVal = -1.0;
+
+                    if (sortedDFs.isEmpty()){
+                        sortedDFs.add(df);
+                        continue;
+                    } 
+
+                    if(sortingCriteria.equalsIgnoreCase("lift")){
+                        value = df.getMetrics()[1];
+                        maxVal = sortedDFs.get(0).getMetrics()[1];
+                        minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[1];
+                    } else if(sortingCriteria.equalsIgnoreCase("supp")){
+                        value = df.getMetrics()[0];
+                        maxVal = sortedDFs.get(0).getMetrics()[0];
+                        minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[0];
+                    } else if(sortingCriteria.equalsIgnoreCase("confave")){
+                        value = (double) (df.getMetrics()[2] + df.getMetrics()[3])/2;
+                        maxVal = (double) (sortedDFs.get(0).getMetrics()[2] + sortedDFs.get(0).getMetrics()[3])/2;
+                        minVal = (double) (sortedDFs.get(sortedDFs.size()-1).getMetrics()[2] + sortedDFs.get(sortedDFs.size()-1).getMetrics()[3])/2;
+                    } else if(sortingCriteria.equalsIgnoreCase("conf1")){
+                        value = df.getMetrics()[2];
+                        maxVal = sortedDFs.get(0).getMetrics()[2];
+                        minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[2];
+                    } else if(sortingCriteria.equalsIgnoreCase("conf2")){
+                        value = df.getMetrics()[3];
+                        maxVal = sortedDFs.get(0).getMetrics()[3];
+                        minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[3];
+                    }
+
+                    if (value >= maxVal){
+                        sortedDFs.add(0,df);
+                    } else if(value <= minVal){
+                        sortedDFs.add(df);
+                    } else {
+                            for (int j=0;j<sortedDFs.size();j++){
+
+                                double refval = 0.0;
+                                double refval2 = 0.0;
+                                if(sortingCriteria.equalsIgnoreCase("lift")){
+                                    refval = sortedDFs.get(j).getMetrics()[1];
+                                    refval2 = sortedDFs.get(j+1).getMetrics()[1];
+                                } else if(sortingCriteria.equalsIgnoreCase("supp")){
+                                    refval = sortedDFs.get(j).getMetrics()[0];
+                                    refval2 = sortedDFs.get(j+1).getMetrics()[0];
+                                } else if(sortingCriteria.equalsIgnoreCase("confave")){
+                                    refval = (double) (sortedDFs.get(j).getMetrics()[2] + sortedDFs.get(j).getMetrics()[3])/2;
+                                    refval2 = (double) (sortedDFs.get(j+1).getMetrics()[2] + sortedDFs.get(j+1).getMetrics()[3])/2;
+                                } else if(sortingCriteria.equalsIgnoreCase("conf1")){
+                                    refval = sortedDFs.get(j).getMetrics()[2];
+                                    refval2 = sortedDFs.get(j+1).getMetrics()[2];
+                                } else if(sortingCriteria.equalsIgnoreCase("conf2")){
+                                    refval = sortedDFs.get(j).getMetrics()[3];
+                                    refval2 = sortedDFs.get(j+1).getMetrics()[3];
+                                }
+
+                                if(value <= refval && value > refval2){
+                                    sortedDFs.add(j+1,df);
+                                    break;
+                                }
+                            } 
+                    }
+                }
+                String jsonObj = gson.toJson(sortedDFs);
+                outputString = jsonObj;
+            }
+
    
         } 
         else if (requestID.equalsIgnoreCase("buildClassificationTree")){

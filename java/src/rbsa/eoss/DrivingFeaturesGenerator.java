@@ -159,7 +159,7 @@ public class DrivingFeaturesGenerator {
             // String: "{collectionName:gt[0],slotName:"String"}"
             // Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
             // Double: "{collectionName:gt[0],slotName:[,maxVal]}"
-            // {presetName[orbits;instruments;numbers]}    
+            // Conditions put on multiple slots: "{collectionName:gt[0],slotName:[minVal;],slotName:String}"
             
             
             ArrayList<String> allSlots = dbquery.getSlotNames(scope);
@@ -182,9 +182,9 @@ public class DrivingFeaturesGenerator {
                     Double threshold1 = (max-min)/3 + min;
                     Double threshold2 = (max-min)/3*2 + min;
                     
-                    String low = slot+":[,"+threshold1+"]";
-                    String mid = slot+":["+threshold1+","+threshold2+"]";
-                    String high = slot+":["+threshold2+",]";
+                    String low = slot+":[;"+threshold1+"]";
+                    String mid = slot+":["+threshold1+";"+threshold2+"]";
+                    String high = slot+":["+threshold2+";]";
                     candidate_features.add(low);
                     candidate_features.add(mid);
                     candidate_features.add(high);
@@ -214,9 +214,9 @@ public class DrivingFeaturesGenerator {
                     // Remove square brackets
                     arguments = arguments.substring(1,arguments.length()-1); 
                     
-                    if(arguments.contains(",")){
+                    if(arguments.contains(";")){
                         // Range given
-                        String[] argSplit = arguments.split(",");
+                        String[] argSplit = arguments.split(";");
                         if(argSplit[0]==null){ // Only max value specified
                             slotNames.add(slotName);
                             conditions.add("lt");

@@ -111,8 +111,9 @@ public class FilterExpressionHandler {
         // Examples of feature expressions
         // Variable in String: "{collectionName:gt[0],slotName:String}"
         // Variable in String: "{collectionName:gt[0],slotName:'String'}"
-        // Variable in Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
-        // Variable in Double: "{collectionName:gt[0],slotName:[,maxVal]}"    
+        // Variable in Double: "{collectionName:gt[0],slotName:[minVal;maxVal]}"
+        // Variable in Double: "{collectionName:gt[0],slotName:[;maxVal]}"  
+        // Conditions put on multiple slots: "{collectionName:gt[0],slotName:[minVal;],slotName:String}"
             
             String collectionExpression = exp.split(",",2)[0];
             String collectionName = collectionExpression.split(":")[0];
@@ -136,9 +137,9 @@ public class FilterExpressionHandler {
                 // Remove square brackets
                 slotArguments = slotArguments.substring(1,slotArguments.length()-1); 
 
-                if(slotArguments.contains(",")){
+                if(slotArguments.contains(";")){
                     // Range given
-                    String[] argSplit = slotArguments.split(",");
+                    String[] argSplit = slotArguments.split(";");
                     if(argSplit[0].isEmpty()){ // Only max value specified
                         slotNames.add(slotName);
                         conditions.add("lt");

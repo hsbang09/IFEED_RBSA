@@ -247,7 +247,9 @@ function generateDrivingFeatures(scope,selected,nonSelected,
         async: false,
         success: function (data, textStatus, jqXHR)
         {
+            if(data===""){alert("No driving feature found!")}else{
         	output = JSON.parse(data);
+            }
         },
         error: function (jqXHR, textStatus, errorThrown)
         {alert("error");}

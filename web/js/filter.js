@@ -358,12 +358,12 @@ function filter_input_preset(selectedOption,userDefOption){
 
     }  
     
-    d3.select("#filter_hints")
-        .append("div")
-        .attr("id","filter_hints_div_2")
-        .attr('class','filter_hints_div')
-        .html('<p>Valid orbit names: 1000, 2000, 3000, 4000, 5000</p>'
-                        +'Valid instrument names: A, B, C, D, E, F, G, H, I, J, K, L');      
+//    d3.select("#filter_hints")
+//        .append("div")
+//        .attr("id","filter_hints_div_2")
+//        .attr('class','filter_hints_div')
+//        .html('<p>Valid orbit names: 1000, 2000, 3000, 4000, 5000</p>'
+//                        +'Valid instrument names: A, B, C, D, E, F, G, H, I, J, K, L');      
 }
 
 
@@ -1038,9 +1038,9 @@ function applyFilter(option){
             if(slot_condition=="not_selected"){
                 return;
             }else if(slot_condition=="gt"){
-                slot_expression = "[" + slot_value + ",]";
+                slot_expression = "[" + slot_value + ";]";
             }else if(slot_condition=="lt"){
-                slot_expression = "[," + slot_value + "]";
+                slot_expression = "[;" + slot_value + "]";
             }else if(slot_condition=="eq"){
                 slot_expression = "[" + slot_value + "]";
             }            
@@ -1149,7 +1149,11 @@ function update_filter_application_status(inputExpression,option){
     
     if(option==="new"){
         // Activate only the current filter
-        d3.selectAll('.filter_application_activate')[0].forEach(function(d){d3.select(d)[0][0].checked=false;})        
+        d3.selectAll('.filter_application_activate')[0].forEach(function(d){
+            d3.select(d)[0][0].checked=false;
+        })        
+        d3.selectAll('.filter_application_expression').style("color","#989898"); // gray
+        thisFilter.select('.filter_application_expression').style("color","#000000"); // black
         thisFilter.select('.filter_application_activate')[0][0].checked=true;
         thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
     }else if(option==="add"){ // or
