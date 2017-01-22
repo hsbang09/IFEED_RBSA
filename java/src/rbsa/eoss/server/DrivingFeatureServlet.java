@@ -297,7 +297,6 @@ public class DrivingFeatureServlet extends HttpServlet {
 
         else if(requestID.equalsIgnoreCase("applyComplexFilter")){
             String filterExpression_raw = request.getParameter("filterExpression");
-            System.out.println(filterExpression_raw);
             FilterExpressionHandler feh = new FilterExpressionHandler();
             ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(filterExpression_raw, new ArrayList<Integer>(), "||");
             String jsonObj = gson.toJson(matchedArchIDs);

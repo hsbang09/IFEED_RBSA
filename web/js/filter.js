@@ -478,7 +478,7 @@ function append_filterInputField_numOrbitInput(){
                 .attr('class','filter_inputs_div')
                 .text("Input number of orbits")
                 .append("input")
-                .attr("class","filter_input_textbox")
+                .attr("class","filter_inputs_textbox")
                 .attr("type","text");
 }
 function append_filterInputField_subsetOfInstruments(){
@@ -727,6 +727,7 @@ function filter_input_String(collectionName, slotName){
     
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
                     {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
+    
     
     d3.select("#filter_inputs")
             .append("div")
@@ -1123,11 +1124,9 @@ function update_filter_application_status(inputExpression,option){
             })
             .attr('class','applied_filter');
     
-    
     thisFilter.append('input')
             .attr('type','checkbox')
-            .attr('class','filter_application_activate')
-            .style('float','left');
+            .attr('class','filter_application_activate');
     thisFilter.append('select')
             .attr('class','filter_application_logical_connective')
             .selectAll('option')
@@ -1139,46 +1138,48 @@ function update_filter_application_status(inputExpression,option){
             })
             .text(function(d){
                 return d.text;
-            })
-            .style('float','left');
+            });
     thisFilter.append('div')
             .attr('class','filter_application_expression')
-            .text(inputExpression)
-            .style('float:left');
+            .text(inputExpression);
     thisFilter.append('button')
             .attr('class','filter_application_delete')
-            .text('delete')
-            .style('float','left');
+            .text('delete');
     
     
     if(option==="new"){
         // Activate only the current filter
-        application_status.selectAll('.filter_application_activate')[0][0].checkted=false;
-        thisFilter.select('.filter_application_activate')[0][0].checkted=true;
+        application_status.selectAll('.filter_application_activate')[0][0].checked=false;
+        thisFilter.select('.filter_application_activate')[0][0].checked=true;
         thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
     }else if(option==="add"){ // or
-        thisFilter.select('.filter_application_activate')[0][0].checkted=true;
+        thisFilter.select('.filter_application_activate')[0][0].checked=true;
         thisFilter.select('.filter_application_logical_connective')[0][0].value="||";
     }else if(option==="within"){ // and
-        thisFilter.select('.filter_application_activate')[0][0].checkted=true;
+        thisFilter.select('.filter_application_activate')[0][0].checked=true;
         thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
     }
     
     thisFilter.select(".filter_application_delete").on("click",function(d){
         thisFilter.remove();
+        applyComplexFilter();
     });
     
-    thisFilter.select('.filter_application_active').on("click",function(d){
-        var activated = d3.select(d)[0][0].checked;
+    thisFilter.select('.filter_application_activate').on("change",function(d){
+        var activated = thisFilter.select('.filter_application_activate')[0][0].checked;
         thisFilter.select('.filter_application_expression').style("color",function(d){
             if(activated){
                 return "#000000"; //black
             }else{
-                return "#D7D7D7"; // gray
+                return "#989898"; // gray
             }
         });
         applyComplexFilter();
     });
+    thisFilter.select('.filter_application_logical_connective').on("change",function(d){
+        applyComplexFilter();
+    });
+
 }
 
 
@@ -1188,9 +1189,9 @@ function parse_filter_application_status(){
     var filter_expressions = [];
     var filter_logical_connective = [];
     application_status.selectAll('.applied_filter')[0].forEach(function(d){
-        var activated = d3.select(d).select('.filter_application_active')[0][0].checked;
+        var activated = d3.select(d).select('.filter_application_activate')[0][0].checked;
         var expression = d3.select(d).select('.filter_application_expression').text();
-        var logic = d3.select(d).select('filter_application_logical_connective')[0][0].value;
+        var logic = d3.select(d).select('.filter_application_logical_connective')[0][0].value;
         if(activated){
             filter_expressions.push(expression);
             filter_logical_connective.push(logic);
@@ -1210,6 +1211,12 @@ function applyComplexFilter(){
     var filterExpression = parse_filter_application_status();
     var matchedArchIDs;
     
+    console.log(filterExpression);
+    
+    if(filterExpression===""){
+        cancelDotSelections();
+        return;
+    }
     $.ajax({
         url: "DrivingFeatureServlet",
         type: "POST",

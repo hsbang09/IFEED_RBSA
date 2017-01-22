@@ -29,7 +29,7 @@ public class FilterExpressionHandler {
         instr_list = Params.instrument_list;
         orbit_list = Params.orbit_list;
         norb = orbit_list.length;
-        ninstr = orbit_list.length;
+        ninstr = instr_list.length;
         dbq = new DBQueryBuilder();
         jea = new JessExpressionAnalyzer();
     }
@@ -37,7 +37,7 @@ public class FilterExpressionHandler {
         instr_list = Params.instrument_list;
         orbit_list = Params.orbit_list;
         norb = orbit_list.length;
-        ninstr = orbit_list.length;
+        ninstr = instr_list.length;
         this.dbq = dbq;
         jea = new JessExpressionAnalyzer();
     }
@@ -60,13 +60,18 @@ public class FilterExpressionHandler {
         // Preset filter: {presetName[orbits;instruments;numbers]}   
         
         ArrayList<Integer> matchedArchIDs = new ArrayList<>();
-        String exp = inputExpression.substring(1,inputExpression.length()-1);
-                
+        String exp;
+        if(inputExpression.startsWith("{") && inputExpression.endsWith("}")){
+            exp = inputExpression.substring(1,inputExpression.length()-1);
+        }else{
+            exp = inputExpression;
+        }
+        System.out.println(inputExpression);
+        
+        
         if(preset){
             String presetName = exp.split("\\[")[0];
             String arguments = exp.substring(0,exp.length()-1).split("\\[")[1];
-            
-            System.out.println("Arguments: "+arguments);
             
             String[] argSplit = arguments.split(";");
             String[] orbits = new String[1];
@@ -83,6 +88,8 @@ public class FilterExpressionHandler {
                 numbers = argSplit[2].split(",");
             }
             
+            
+//            System.out.println(arguments);
 //            for(int i=0;i<orbits.length;i++){
 //                System.out.println("orbit" + i + ": " + orbits[i]);
 //            }
@@ -227,7 +234,6 @@ public class FilterExpressionHandler {
         
         int[][] mat = booleanString2IntArray(bitString);
         if(type.equalsIgnoreCase("present")){
-            
             int instrument = Integer.parseInt(instruments[0]);
             for (int i=0;i<norb;i++) {
                 if (mat[i][instrument]==1) return true;
@@ -319,13 +325,13 @@ public class FilterExpressionHandler {
             int num = Integer.parseInt(numbers[0]);
             int count = 0;
 
-            if(orbits[0]!=null){
+            if(orbits[0]!=null && !orbits[0].isEmpty()){
                 // Number of instruments in a specified orbit
                 int orbit = Integer.parseInt(orbits[0]);
                 for(int i=0;i<ninstr;i++){
                     if(mat[orbit][i]==1){count++;}
                 }
-            }else if(instruments[0]!=null){
+            }else if(instruments[0]!=null && !instruments[0].isEmpty()){
                 // Number of a specified instrument
                 int instrument = Integer.parseInt(instruments[0]);
                 for(int i=0;i<norb;i++){
@@ -402,6 +408,7 @@ public class FilterExpressionHandler {
                 e_collapsed = e_collapsed.substring(2);
                 e = e.substring(2);
             }
+            System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // while");
             
             String next; // The imediate next logical connective
             int and = e_collapsed.indexOf("&&");
@@ -419,12 +426,17 @@ public class FilterExpressionHandler {
             }
             
             if(!next.isEmpty()){
+                System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // next not empty");
+
                 current_collapsed = e_collapsed.split(next,2)[0];
                 String current = e.substring(0,current_collapsed.length());
                 e_collapsed = e_collapsed.substring(current_collapsed.length());
                 e = e.substring(current_collapsed.length());
+                System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // after processing");
                 currMatched = processFilterExpression(current,currMatched,prev); 
             }else{
+                System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // end of the run");
+
                 currMatched = processFilterExpression(e,currMatched,prev); 
                 break;
             }
