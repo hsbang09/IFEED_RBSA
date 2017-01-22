@@ -66,8 +66,6 @@ public class FilterExpressionHandler {
         }else{
             exp = inputExpression;
         }
-        System.out.println(inputExpression);
-        
         
         if(preset){
             String presetName = exp.split("\\[")[0];
@@ -121,7 +119,7 @@ public class FilterExpressionHandler {
             String collectionArguments = collectionExpression.split(":")[1];
             String collectionCondition = collectionArguments.split("\\[")[0];
             String collectionNumber = collectionArguments.split("\\[")[1];
-            collectionNumber = collectionNumber.substring(0,collectionNumber.length());
+            collectionNumber = collectionNumber.substring(0,collectionNumber.length()-1);
             
             String slotExpression = exp.split(",",2)[1];
             String slotName = slotExpression.split(":")[0];
@@ -141,12 +139,12 @@ public class FilterExpressionHandler {
                 if(slotArguments.contains(",")){
                     // Range given
                     String[] argSplit = slotArguments.split(",");
-                    if(argSplit[0]==null){ // Only max value specified
+                    if(argSplit[0].isEmpty()){ // Only max value specified
                         slotNames.add(slotName);
                         conditions.add("lt");
                         values.add(argSplit[1]);
                         valueTypes.add("Double");
-                    }else if(argSplit[1]==null){ // Only min value specified
+                    }else if(argSplit.length==1){ // Only min value specified
                         slotNames.add(slotName);
                         conditions.add("gt");
                         values.add(argSplit[0]);
@@ -408,7 +406,6 @@ public class FilterExpressionHandler {
                 e_collapsed = e_collapsed.substring(2);
                 e = e.substring(2);
             }
-            System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // while");
             
             String next; // The imediate next logical connective
             int and = e_collapsed.indexOf("&&");
@@ -426,17 +423,16 @@ public class FilterExpressionHandler {
             }
             
             if(!next.isEmpty()){
-                System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // next not empty");
-
-                current_collapsed = e_collapsed.split(next,2)[0];
+                if(next.equals("||")){
+                    current_collapsed = e_collapsed.split("\\|\\|",2)[0];
+                }else{
+                    current_collapsed = e_collapsed.split(next,2)[0];
+                }
                 String current = e.substring(0,current_collapsed.length());
                 e_collapsed = e_collapsed.substring(current_collapsed.length());
                 e = e.substring(current_collapsed.length());
-                System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // after processing");
                 currMatched = processFilterExpression(current,currMatched,prev); 
             }else{
-                System.out.println("e-collapse: " + e_collapsed + ", e: " + e + " // end of the run");
-
                 currMatched = processFilterExpression(e,currMatched,prev); 
                 break;
             }

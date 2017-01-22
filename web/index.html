@@ -553,8 +553,7 @@ and open the template in the editor.
                             }
                         })
                         .text(function (d) {
-                            var type = d.type;
-                            return ActualName2DisplayName(d.content,type);
+                            return d.content;
                         })
                         .style("font-size", "13px");
 

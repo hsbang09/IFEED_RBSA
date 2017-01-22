@@ -906,7 +906,7 @@ function applyFilter(option){
         dropdown3 = d3.select('#filter_options_dropdown_3')[0][0].value;
     }
     if(d3.select('#filter_options_dropdown_4')[0][0]!==null){
-        dropdown3 = d3.select('#filter_options_dropdown_4')[0][0].value;
+        dropdown4 = d3.select('#filter_options_dropdown_4')[0][0].value;
     }    
     if(d3.select('#filter_inputs_div_1').select('.filter_inputs_textbox')[0][0]!==null){
         input1_textbox = d3.select('#filter_inputs_div_1').select('.filter_inputs_textbox')[0][0].value;
@@ -1022,6 +1022,7 @@ function applyFilter(option){
             return;
         }
         
+        
         // Examples of feature expressions
         // "{collectionName:gt[0],slotName:"String"}"
         // "{collectionName:gt[0],slotName:[minVal,maxVal]}"
@@ -1030,7 +1031,7 @@ function applyFilter(option){
         var Fact_condition = input1_select;
         var Fact_number = input1_textbox; 
         var slot_expression;
-        if(d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0]==null){
+        if(d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0]===null){
             // Numeric variable
             var slot_condition = input2_select;
             var slot_value = input2_textbox; 
@@ -1047,7 +1048,7 @@ function applyFilter(option){
             // String variable
             var slot_value = input2_select;
             var slot_value_substring = input3_textbox;
-            if(slot_value_substring==null){
+            if(slot_value_substring===null || slot_value_substring===''){
                 slot_expression = slot_value;
             }else{
                 // Query using substring
@@ -1055,7 +1056,6 @@ function applyFilter(option){
             }
         }         
         filterExpression = collectionName + ":" + Fact_condition+"["+ Fact_number + "]," + slotName + ":"+ slot_expression;
-
     }else{// not selected
         return;
     }
@@ -1149,7 +1149,7 @@ function update_filter_application_status(inputExpression,option){
     
     if(option==="new"){
         // Activate only the current filter
-        application_status.selectAll('.filter_application_activate')[0][0].checked=false;
+        d3.selectAll('.filter_application_activate')[0].forEach(function(d){d3.select(d)[0][0].checked=false;})        
         thisFilter.select('.filter_application_activate')[0][0].checked=true;
         thisFilter.select('.filter_application_logical_connective')[0][0].value="&&";
     }else if(option==="add"){ // or

@@ -41,6 +41,14 @@
     margin-top:15px;
     float:left;
 }
+.df_scope_selection_dropdown{
+    width: 200px;
+    float:left;
+    height:24px;
+    margin-left: 3px;
+}
+
+
 #df_button_div{
     width:100%;
     float:left;
