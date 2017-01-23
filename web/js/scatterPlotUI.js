@@ -259,7 +259,7 @@ function selectArchsWithinRange() {
         }
     })
             .attr("class", "dot_highlighted")
-            .style("fill", "#0040FF");
+            .style("fill", "#20DCCC");
 
     clickedArchs.filter(function (d) {
 
@@ -381,7 +381,7 @@ function dot_mouseover(d) {
 
 function color_dots(d){
     if (d3.select(d).attr("class") == "dot_highlighted") {
-        d3.select(d).style("fill","#0040FF");
+        d3.select(d).style("fill","#20DCCC");
     } else if (d3.select(d)[0][0].__data__.status == "justAdded") {
         d3.select(d).style("fill", "#20FE5B");
     } else if (d3.select(d)[0][0].__data__.status == "added") {
@@ -569,7 +569,7 @@ function scatterPlot_option(selected_option){ // three options: zoom, drag_selec
                                 yCoord + margin.top >= b.y && yCoord + margin.top  <= b.y+b.height
                             ) {
                                 d3.select(d).attr("class","dot_highlighted")
-                                        .style("fill", "#0040FF");      
+                                        .style("fill", "#20DCCC");      
                                 selection_changed = true;
                                 initialize_tabs_driving_features();
                                 initialize_tabs_classification_tree();

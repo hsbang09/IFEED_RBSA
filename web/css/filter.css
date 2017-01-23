@@ -140,7 +140,8 @@
     width:95%;
     float:left;
     margin-left: 2px;
-    margin-top: 8px;
+    margin-top: 7px;
+	margin-bottom: 5px;
 }
 
 
@@ -163,6 +164,18 @@
 	margin-left: 5px;
 	float:left;
 }
+
+
+#filter_inputs_append_slots{
+	width:100%;
+	margin-top:15px;
+	margin-bottom: 8px;
+}
+#filter_inputs_append_slot_button{
+	margin-left:6px;
+}
+
+
 
 /* Filter Hints */
 

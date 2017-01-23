@@ -770,7 +770,7 @@ function display_drivingFeatures(source,sortby) {
                             });     
                     d3.selectAll("[class=dot_selected_DFhighlighted]")
                     		.attr("class", "dot_highlighted")
-                            .style("fill","#0040FF");    
+                            .style("fill","#20DCCC");    
 
                 });
 

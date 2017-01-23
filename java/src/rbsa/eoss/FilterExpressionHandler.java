@@ -101,13 +101,18 @@ public class FilterExpressionHandler {
 
             ArrayList<org.bson.Document> docs = dbq.getMetadata();
             for(org.bson.Document doc:docs){
-                int ArchID = doc.get("ArchID",Double.class).intValue();
+                int ArchID;
+                ArchID = doc.get("ArchID",Double.class).intValue();
                 String bitString = doc.get("bitString", String.class);
                 if(comparePresetFilter(bitString, presetName,orbits,instruments,numbers)){
                     matchedArchIDs.add(ArchID);
                 }
             }
         }else{
+            
+            System.out.println(exp);
+            
+            
         // Examples of feature expressions
         // Variable in String: "{collectionName:gt[0],slotName:String}"
         // Variable in String: "{collectionName:gt[0],slotName:'String'}"
@@ -237,6 +242,7 @@ public class FilterExpressionHandler {
     public boolean comparePresetFilter(String bitString, String type, String[] orbits, String[] instruments, String[] numbers){
         
         int[][] mat = booleanString2IntArray(bitString);
+        
         if(type.equalsIgnoreCase("present")){
             int instrument = Integer.parseInt(instruments[0]);
             for (int i=0;i<norb;i++) {
