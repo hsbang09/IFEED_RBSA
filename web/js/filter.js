@@ -25,6 +25,8 @@ function openFilterOptions(){
             .attr("id","filter_options");
     var filterInputs = archInfoBox.append("div")
             .attr('id','filter_inputs');
+    var filterAppendSlots = archInfoBox.append("div")
+            .attr('id','filter_inputs_append_slots');
     var filterHints = archInfoBox.append('div')
             .attr('id','filter_hints');
     var filterButtons = archInfoBox.append('div')
@@ -92,6 +94,9 @@ function remove_filter_option_inputs(level){
     
     d3.selectAll('.filter_inputs_div').remove(); 
     d3.selectAll('.filter_hints_div').remove();
+    d3.select('#filter_inputs_append_slot_button').remove();
+    d3.select('#filter_inputs_append_slot_select').remove();
+    
     
     d3.select('#filter_options_dropdown_4').remove();
     if(level==3){return;}
@@ -567,7 +572,7 @@ function filter_options_dropdown_objectives(){
                 d3.selectAll('.filter_hints_div').remove();
                 return;
             }
-            filter_options_dropdown_attribute(collectionName,slot);
+            filter_options_dropdown_attribute(collectionName,slot,true);
         });
     }
 }
@@ -609,7 +614,7 @@ function filter_options_dropdown_science(){
             d3.selectAll('.filter_hints_div').remove();
             return;
         }
-        filter_options_dropdown_attribute(collectionName,slot);
+        filter_options_dropdown_attribute(collectionName,slot,true);
     });
         
 }
@@ -703,12 +708,32 @@ function get_class_of_slot(collectionName, slotName){
 
 
 
-function filter_options_dropdown_attribute(collectionName, slotName){
+function filter_options_dropdown_attribute(collectionName, slotName, first){    
     
-    d3.selectAll('.filter_inputs_div').remove();
-    d3.selectAll('.filter_hints_div').remove();
-    
-    filter_input_num_instances();
+    if(first){
+        d3.selectAll('.filter_inputs_div').remove();
+        d3.selectAll('.filter_hints_div').remove();
+        d3.select('#filter_inputs_append_slot_button').remove();
+
+        filter_input_num_instances();
+        
+        var append_slot_select = d3.select('#filter_inputs_append_slots')
+                .append('select')
+                .attr('id','filter_inputs_append_slot_select');
+        append_filterInputField_fact_slot(append_slot_select, collectionName);
+        
+        d3.select('#filter_inputs_append_slots')
+                .append('button')
+                .attr('id','filter_inputs_append_slot_button')
+                .on("click",function(){
+                    var slot = d3.select('#filter_inputs_append_slot_select')[0][0].value;
+                    if(slot==="not_selected"){
+                        return
+                    }
+                    filter_options_dropdown_attribute(collectionName, slot, false);
+                });
+    }
+
     var slotClass = get_class_of_slot(collectionName,slotName);
     if(slotClass.includes("String")){
         filter_input_String(collectionName,slotName);
@@ -775,20 +800,23 @@ function filter_input_String(collectionName, slotName){
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
                     {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
     
-
-    d3.select("#filter_inputs")
+    var inputNum = get_number_of_inputs() + 1;
+    
+    var thisInput = d3.select("#filter_inputs")
             .append("div")
-            .attr("id","filter_inputs_div_2")
-            .attr('class','filter_inputs_div')
-            .append('div')
+            .attr("id",function(){
+                return "filter_inputs_div_" + inputNum;
+            })
+            .attr('class','filter_inputs_div');
+    
+    thisInput.append('div')
             .attr('class','filter_inputs_supporting_comments_begin')
             .text("which have slot values that are ");
-    d3.select('#filter_inputs_div_2')
-            .append('select')
-            .attr('class','filter_inputs_select');
+    thisInput.append('select')
+            .attr('class','filter_inputs_select')
+            .attr('type','String');
             
-    d3.select('#filter_inputs_div_2')
-            .select('select')
+    thisInput.select('select')
             .selectAll("option")
             .data(value_options)
             .enter()
@@ -801,31 +829,26 @@ function filter_input_String(collectionName, slotName){
             }); 
             
             
-    d3.select("#filter_inputs_div_2")
-            .append("div")
+    thisInput.append("div")
             .attr("class","filter_inputs_supporting_comments_end")
             .text("Or include a substring ");
-    d3.select('#filter_inputs_div_2')
-            .append("input")
+    thisInput.append("input")
             .attr("class","filter_inputs_textbox")  
             .attr("type","text");  
     
     
-//    d3.select("#filter_inputs")
-//            .append("div")
-//            .attr("id","filter_inputs_div_3")
-//            .attr('class','filter_inputs_div')
-//            .text("Or include a substring ")
-//            .append("input")
-//            .attr("class","filter_inputs_textbox")  
-//            .attr("type","text");  
-            
     d3.select("#filter_hints")
                 .append("div")
                 .attr("id","filter_hints_div_1")
                 .attr('class','filter_hints_div')
                 .text("(Hint:)");
 }
+
+
+
+
+
+
 function filter_input_Double(collectionName,slotName){
     
     var min_max = get_minmax_value(collectionName,slotName);   
@@ -835,16 +858,24 @@ function filter_input_Double(collectionName,slotName){
     var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
                     {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];
     
-   
-    d3.select("#filter_inputs")
+    var inputNum = get_number_of_inputs() + 1;
+
+    var thisInput = d3.select("#filter_inputs")
             .append("div")
-            .attr("id","filter_inputs_div_2")
-            .attr('class','filter_inputs_div')
-            .text("which have slot values that are ")
-            .append('select')
-            .attr('class','filter_inputs_select');
-    d3.select('#filter_inputs_div_2')
-            .select('select')
+            .attr("id",function(){
+                return "filter_inputs_div_" + inputNum;
+            })
+            .attr('class','filter_inputs_div');
+    
+    thisInput.append('div')
+            .class('filter_inputs_supporting_comments_begin')
+            .text("which have slot values that are ");
+    
+    thisInput.append('select')
+            .attr('class','filter_inputs_select')
+            .attr('type','Double');
+    
+    thisInput.select('select')
             .selectAll("option")
             .data(condition_options)
             .enter()
@@ -855,17 +886,19 @@ function filter_input_Double(collectionName,slotName){
             .text(function(d){
                 return d.text;
             });  
-    d3.select('#filter_inputs_div_2')
-            .append("input")
+    thisInput.append("input")
             .attr("class","filter_inputs_textbox")  
             .attr("type","text");
     
-    d3.select("#filter_hints")
-                .append("div")
-                .attr("id","filter_hints_div_1")
-                .attr('class','filter_hints_div')
+    thisInput.append("div")
+                .attr('class','filter_inputs_supporting_comments_end')
                 .text("(Max value: +"+ max_val +", min value: "+ min_val +")");
       
+}
+
+
+function get_number_of_inputs(){
+    return d3.selectAll('.filter_inputs_div')[0].size();
 }
 
 
@@ -880,15 +913,13 @@ function applyFilter(option){
     var filterExpression;
     var preset = false;
     var matchedArchIDs = null;
-    
+
     var dropdown1 = d3.select("#filter_options_dropdown_1")[0][0].value;
     var dropdown2 = null;
     var dropdown3 = null;
     var dropdown4 = null;
-    var input1_textbox = null; var input1_select = null;
-    var input2_textbox = null; var input2_select = null;
-    var input3_textbox = null;
     
+
     if(d3.select('#filter_options_dropdown_2')[0][0]!==null){
         dropdown2 = d3.select('#filter_options_dropdown_2')[0][0].value;
     }
@@ -898,21 +929,40 @@ function applyFilter(option){
     if(d3.select('#filter_options_dropdown_4')[0][0]!==null){
         dropdown4 = d3.select('#filter_options_dropdown_4')[0][0].value;
     }    
-    if(d3.select('#filter_inputs_div_1').select('.filter_inputs_textbox')[0][0]!==null){
-        input1_textbox = d3.select('#filter_inputs_div_1').select('.filter_inputs_textbox')[0][0].value;
-    }
-    if(d3.select('#filter_inputs_div_2').select('.filter_inputs_textbox')[0][0]!==null){
-        input2_textbox = d3.select('#filter_inputs_div_2').select('.filter_inputs_textbox')[0][0].value;
-    }
-    if(d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0]!==null){
-        input3_textbox = d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0].value;
-    }        
-    if(d3.select('#filter_inputs_div_1').select('.filter_inputs_select')[0][0]!==null){
-        input1_select = d3.select('#filter_inputs_div_1').select('.filter_inputs_select')[0][0].value;
-    }        
-    if(d3.select('#filter_inputs_div_2').select('.filter_inputs_select')[0][0]!==null){
-        input2_select = d3.select('#filter_inputs_div_2').select('.filter_inputs_select')[0][0].value;
-    }        
+    
+    var numInputs = get_number_of_inputs();
+    var input_textbox = [];
+    var input_select = [];
+    var inputObj =  d3.selectAll('.filter_inputs_div')[0];
+    inputObj.forEach(function(d,i){
+        var textboxObj = d3.select(d).select('.filter_inputs_textbox')[0][0];
+        var selectObj = d3.select(d).select('.filter_inputs_select')[0][0];
+        if(textboxObj!==null){
+            input_textbox.push(textboxObj.value);
+        }else{
+            input_textbox.push(null);
+        }
+        if(selectObj!==null){
+            input_select.push(selectObj.value);
+        }else{
+            input_select.push(null);
+        }
+    })
+//    for(var i=0;i<numInputs;i++){
+//        var textboxObj = d3.select(inputObj[i]).select('.filter_inputs_textbox')[0][0];
+//        var selectObj = d3.select(inputObj[i]).select('.filter_inputs_select')[0][0];
+//        if(textboxObj!==null){
+//            input_textbox.push(textboxObj.value);
+//        }else{
+//            input_textbox.push(null);
+//        }
+//        if(selectObj!==null){
+//            input_select.push(selectObj.value);
+//        }else{
+//            input_select.push(null);
+//        }
+//    }
+
     
     if(dropdown1=="design_input"){ 
         
@@ -921,24 +971,24 @@ function applyFilter(option){
         // Example of an filter expression: {presetName[orbits;instruments;numbers]} 
         var presetFilter = dropdown2;
         if(presetFilter=="present" || presetFilter=="absent" || presetFilter=="together" || presetFilter=="separate"){
-            var instrument = input1_textbox;
+            var instrument = input_textbox[0];
             filterExpression = presetFilter + "[;" + Name2Index(instrument,"instrument") + ";]";
         }else if(presetFilter == "inOrbit" || presetFilter == "notInOrbit" || presetFilter=="togetherInOrbit"){
-            var orbit = input1_textbox;
-            var instrument = input2_textbox;
+            var orbit = input_textbox[0];
+            var instrument = input_textbox[1];
             filterExpression = presetFilter + "["+ Name2Index(orbit,"orbit") + ";" + Name2Index(instrument,"instrument")+ ";]";
         }else if(presetFilter =="emptyOrbit"){
-            var orbit = input1_textbox;
+            var orbit = input_textbox[0];
             filterExpression = presetFilter + "[" + Name2Index(orbit,"orbit") + ";;]";
         }else if(presetFilter=="numOrbits"){
-            var number = input1_textbox;
+            var number = input_textbox[0];
             filterExpression = presetFilter + "[;;" + number + "]";
         }else if(presetFilter=="subsetOfInstruments"){
             // To be implemented
         }else if(presetFilter=="numOfInstruments"){
-            var orbit = input1_textbox;
-            var instrument = input2_textbox;
-            var number = input3_textbox;
+            var orbit = input_textbox[0];
+            var instrument = input_textbox[1];
+            var number = input_textbox[2];
             // There are 3 possibilities
             
             var orbitEmpty = false; 
@@ -1015,37 +1065,47 @@ function applyFilter(option){
         
         // Examples of feature expressions
         // "{collectionName:gt[0],slotName:"String"}"
-        // "{collectionName:gt[0],slotName:[minVal,maxVal]}"
-        // "{collectionName:gt[0],slotName:[,maxVal]}"
+        // "{collectionName:gt[0],slotName:[minVal;maxVal]}"
+        // "{collectionName:gt[0],slotName:[;maxVal]}"
+        // "{collectionName:gt[0],slotName:[;maxVal],slotName:[minVal;]}"
         
-        var Fact_condition = input1_select;
-        var Fact_number = input1_textbox; 
-        var slot_expression;
-        if(d3.select('#filter_inputs_div_3').select('.filter_inputs_textbox')[0][0]===null){
-            // Numeric variable
-            var slot_condition = input2_select;
-            var slot_value = input2_textbox; 
-            if(slot_condition=="not_selected"){
-                return;
-            }else if(slot_condition=="gt"){
-                slot_expression = "[" + slot_value + ";]";
-            }else if(slot_condition=="lt"){
-                slot_expression = "[;" + slot_value + "]";
-            }else if(slot_condition=="eq"){
-                slot_expression = "[" + slot_value + "]";
-            }            
-        }else{
-            // String variable
-            var slot_value = input2_select;
-            var slot_value_substring = input3_textbox;
-            if(slot_value_substring===null || slot_value_substring===''){
-                slot_expression = slot_value;
+        var Fact_condition = input_select[0];
+        var Fact_number = input_textbox[0]; 
+        var slot_expression="";
+        
+        for(var i=1;i<input_select.length;i++){
+            var text = input_textbox[i];
+            var select = input_select[i];
+            var thisExpression = "";
+
+            if(d3.select(inputObj[i]).select('.filter_inputs_select').attr('type')==="Double"){
+                // Numeric variable
+                var slot_condition = select;
+                var slot_value = text; 
+                if(slot_condition=="not_selected"){
+                    return;
+                }else if(slot_condition=="gt"){
+                    thisExpression = slotName + ":[" + slot_value + ";]";
+                }else if(slot_condition=="lt"){
+                    thisExpression = slotName + ":[;" + slot_value + "]";
+                }else if(slot_condition=="eq"){
+                    thisExpression = slotName + ":[" + slot_value + "]";
+                }            
             }else{
-                // Query using substring
-                slot_expression = "'" + slot_value_substring + "'";
-            }
-        }         
-        filterExpression = collectionName + ":" + Fact_condition+"["+ Fact_number + "]," + slotName + ":"+ slot_expression;
+                // String variable
+                var slot_value = select;
+                var slot_value_substring = text;
+                if(slot_value_substring===null || slot_value_substring===''){
+                    thisExpression = slotName + ":" + slot_value;
+                }else{
+                    // Query using substring
+                    thisExpression = slotName + ":"+ "'" + slot_value_substring + "'";
+                }
+            }  
+            slot_expression = slot_expression + "," + thisExpression;
+        }
+       
+        filterExpression = collectionName + ":" + Fact_condition+"["+ Fact_number + "]" + slot_expression;
     }else{// not selected
         return;
     }
