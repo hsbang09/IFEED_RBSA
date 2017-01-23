@@ -198,7 +198,7 @@ public class DrivingFeatureServlet extends HttpServlet {
             ArrayList<DrivingFeature> DFs;
             DFs = dfsGen.getDrivingFeatures();
             
-            if(DFs.size()==0){
+            if(DFs.isEmpty()){
                 outputString="";
             }
             else{

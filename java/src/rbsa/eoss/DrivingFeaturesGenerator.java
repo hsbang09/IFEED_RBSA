@@ -196,8 +196,9 @@ public class DrivingFeaturesGenerator {
             for(String slot_condition:candidate_features){
                 // Examples of slot_condition
                 // slotName:String
-                // slotName:[minVal,maxVal]
-                // slotName:[,maxVal]
+                // slotName:[minVal;maxVal]
+                // slotName:[;maxVal]
+                // slotName:[minVal;]
                 // slotName:[val]
                 
                 ArrayList<String> slotNames = new ArrayList<>();
@@ -217,12 +218,12 @@ public class DrivingFeaturesGenerator {
                     if(arguments.contains(";")){
                         // Range given
                         String[] argSplit = arguments.split(";");
-                        if(argSplit[0]==null){ // Only max value specified
+                        if(argSplit[0].isEmpty()){ // Only max value specified
                             slotNames.add(slotName);
                             conditions.add("lt");
                             values.add(argSplit[1]);
                             valueTypes.add("Double");
-                        }else if(argSplit[1]==null){ // Only min value specified
+                        }else if(argSplit.length==1){ // Only min value specified
                             slotNames.add(slotName);
                             conditions.add("gt");
                             values.add(argSplit[0]);
