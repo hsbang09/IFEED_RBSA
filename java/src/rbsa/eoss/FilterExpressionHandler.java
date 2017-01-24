@@ -8,6 +8,10 @@ package rbsa.eoss;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
+
 import org.bson.Document;
 import rbsa.eoss.local.Params;
 
@@ -85,19 +89,6 @@ public class FilterExpressionHandler {
             if(argSplit.length>2){
                 numbers = argSplit[2].split(",");
             }
-            
-            
-//            System.out.println(arguments);
-//            for(int i=0;i<orbits.length;i++){
-//                System.out.println("orbit" + i + ": " + orbits[i]);
-//            }
-//            for(int i=0;i<instruments.length;i++){
-//                System.out.println("instruments" + i + ": " + instruments[i]);
-//            }            
-//            for(int i=0;i<numbers.length;i++){
-//                System.out.println("numbers" + i + ": " + numbers[i]);
-//            }
-
 
             ArrayList<org.bson.Document> docs = dbq.getMetadata();
             for(org.bson.Document doc:docs){
@@ -111,7 +102,7 @@ public class FilterExpressionHandler {
         }else{
             
             System.out.println(exp);
-            
+
             
         // Examples of feature expressions
         // Variable in String: "{collectionName:gt[0],slotName:String}"
@@ -193,21 +184,32 @@ public class FilterExpressionHandler {
 
             // Make a query on Facts and get the ID's of architectures that contain those Facts
             ArrayList<Integer> matchedArchIDs_slot = dbq.makeQuery_ArchID(collectionName, slotNames, conditions, values, valueTypes);
-
+            ArrayList<Integer> allArchIDList = dbq.getAllArchIDs(collectionName);          
+            
             // FactCounter counts the number of Facts corresponding to each architecture
             HashMap<Integer,Integer> FactCounter = new HashMap<>();
+            
+            //Get unique set of IDs
+            Set<Integer> allArchIDSet = new HashSet<Integer>(allArchIDList);            
+            
+            for(int id:allArchIDSet){
+                FactCounter.put(id,0);
+            }
             for(int id:matchedArchIDs_slot){
                 // Keys are unique architecture ID's
-                if(FactCounter.containsKey(id)){
-                    int cnt = FactCounter.get(id);
-                    FactCounter.put(id, cnt+1);
-                }else{
-                    FactCounter.put(id, 1);
-                }
-            }
+                int cnt = FactCounter.get(id);
+                FactCounter.put(id, cnt+1);
+            }            
+
             String inequalitySign = collectionCondition;
             for(int uniqueArchID:FactCounter.keySet()){
-                boolean pass = compare_number(FactCounter.get(uniqueArchID),inequalitySign,Integer.parseInt(collectionNumber));
+                boolean pass;
+                if(collectionCondition.equals("all")){
+                    // The number of filtered instances should match the number of total instances
+                    pass=FactCounter.get(uniqueArchID)==Collections.frequency(allArchIDList,uniqueArchID);
+                }else{
+                    pass = compare_number(FactCounter.get(uniqueArchID),inequalitySign,Integer.parseInt(collectionNumber));
+                }
                 if(pass){
                     matchedArchIDs.add(uniqueArchID);
                 }
@@ -218,9 +220,7 @@ public class FilterExpressionHandler {
     }    
     
     
-    
-    
-    
+        
     public boolean compare_number(int num1, String condition, int num2){
         if(condition.equals("eq")){
             return num1==num2;

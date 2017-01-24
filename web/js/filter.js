@@ -694,8 +694,9 @@ function filter_options_dropdown_attribute(collectionName, slotName, first){
 
 function filter_input_num_instances(){
     
-    var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
-                    {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
+    var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"more than"},
+                    {value:"eq",text:"exactly"},{value:"ne",text:"not equal to"},
+                    {value:"all",text:"all"},{value:"lt",text:"less than"}];    
     
     d3.select("#filter_inputs")
             .append("div")
@@ -746,9 +747,7 @@ function filter_input_String(collectionName, slotName){
         value_options.push({value:val,text:val});
     }    
     
-    var condition_options = [{value:"not_selected",text:"Select a condition"},{value:"gt",text:"greater than"},
-                    {value:"eq",text:"equal to"},{value:"ne",text:"not equal to"},{value:"lt",text:"less than"}];    
-    
+
     var inputNum = get_number_of_inputs() + 1;
     
     var thisInput = d3.select("#filter_inputs")
@@ -845,9 +844,7 @@ function filter_input_Double(collectionName,slotName){
     thisInput.append("div")
                 .attr('class','filter_inputs_supporting_comments_end')
                 .text("(Max value: +"+ max_val +", min value: "+ min_val +")");
-      
 }
-
 
 function get_number_of_inputs(){
     return d3.selectAll('.filter_inputs_div')[0].length;
@@ -1249,7 +1246,8 @@ function applyComplexFilter(){
             d3.select(d).attr('class','dot_highlighted')
                         .style("fill", "#20DCCC");
         }
-    });    
+    });  
+    d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
 }
 
 

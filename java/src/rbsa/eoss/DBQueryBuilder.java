@@ -432,5 +432,23 @@ public class DBQueryBuilder {
         }
         return archIDs;
     }
+    
+    public ArrayList<Integer> getAllArchIDs(String collectionName){
+        
+        MongoDatabase Mdb = mongoClient.getDatabase(dbName);
+        MongoCollection col = Mdb.getCollection(collectionName);
+        FindIterable found = col.find();
+        found.projection(fields(
+                    include("ArchID")
+                ));
+        MongoCursor iter = found.iterator();
+        ArrayList<Integer> archIDs = new ArrayList<>();
+        while(iter.hasNext()){
+            Document doc = (Document) iter.next();
+            int id = doc.getDouble("ArchID").intValue();
+            archIDs.add(id);
+        }
+        return archIDs;
+    }
 
 }

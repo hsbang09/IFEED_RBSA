@@ -147,53 +147,6 @@ public class DrivingFeatureServlet extends HttpServlet {
             dfsGen.initialize(scope,behavioral, non_behavioral, support_threshold,confidence_threshold,lift_threshold);
             
             
-            
-////            "[{"name":"thisName","expression":"present(ACE_ORCA)&&present(DESD_LID)"},{"name":"secondOne","expression":"present(DESD_LID)||numOrbitUsed(3)"}]"
-//            String userDefFilters_raw = request.getParameter("userDefFilters");
-//
-//            if (userDefFilters_raw==null){
-//            }else{
-////                userDefFilters_raw = userDefFilters_raw.substring(2, userDefFilters_raw.length()-2);
-////              {"name":"thisName","expression":"present(ACE_ORCA)&&present(DESD_LID)"},{"name":"secondOne","expression":"present(DESD_LID)||numOrbitUsed(3)"}
-//
-//              while(true){
-//              	
-//              	if(!userDefFilters_raw.contains("},") && !userDefFilters_raw.contains("}]")){
-//              		if(!userDefFilters_raw.endsWith("}")){
-//              			break;
-//              		}
-//              	}
-//              	
-//              	int paren1 = userDefFilters_raw.indexOf("{");
-//                int paren2;
-//                
-//                if(userDefFilters_raw.indexOf("},")!=-1){
-//                	paren2 = userDefFilters_raw.indexOf("},");
-//                }else if (userDefFilters_raw.indexOf("}]")!=-1){
-//                	paren2 = userDefFilters_raw.indexOf("}]");
-//                } else {
-//                	paren2 = userDefFilters_raw.length()-1;
-//                }
-//                  
-//                String thisFilter = userDefFilters_raw.substring(paren1+1,paren2);
-//              	String thisFilterName = thisFilter.split(",",2)[0]; //"name":"thisName"
-//              	thisFilterName = thisFilterName.split(":")[1]; // "thisName"
-//              	thisFilterName = thisFilterName.substring(1, thisFilterName.length()-1); //thisName
-//              	String thisFilterExp = thisFilter.split(",",2)[1];  //"expression":"present(ACE_ORCA)&&present(DESD_LID)"
-//              	thisFilterExp = thisFilterExp.split(":")[1]; // "thisName"
-//              	thisFilterExp = thisFilterExp.substring(1, thisFilterExp.length()-1); //thisName
-//              	
-//              	dfsGen.addUserDefFilter(thisFilterName,thisFilterExp);
-//              	
-//              	if(userDefFilters_raw.substring(paren2).length()==1){
-//              		break;
-//              	}else{
-//              		userDefFilters_raw = userDefFilters_raw.substring(paren2+1);
-//              	}
-//              }
-//            	
-//            }
-            
 
             ArrayList<DrivingFeature> DFs;
             DFs = dfsGen.getDrivingFeatures();
@@ -205,8 +158,11 @@ public class DrivingFeatureServlet extends HttpServlet {
                 String sortingCriteria = request.getParameter("sortBy");
                 ArrayList<DrivingFeature> sortedDFs;
                 sortedDFs = new ArrayList<>();
+                
+                System.out.println("Number of driving features found:"  + DFs.size());
+                    
                 for (DrivingFeature df:DFs){
-
+                    
                     double value = 0.0;
                     double maxVal = 1000000.0;
                     double minVal = -1.0;
@@ -215,7 +171,6 @@ public class DrivingFeatureServlet extends HttpServlet {
                         sortedDFs.add(df);
                         continue;
                     } 
-
                     if(sortingCriteria.equalsIgnoreCase("lift")){
                         value = df.getMetrics()[1];
                         maxVal = sortedDFs.get(0).getMetrics()[1];

@@ -17,6 +17,8 @@ import java.util.ArrayList;
 //import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
+import java.util.List;
 
 import rbsa.eoss.local.Params;
 import weka.classifiers.trees.J48;
@@ -37,7 +39,7 @@ public class DrivingFeaturesGenerator {
     private ArrayList<Integer> non_behavioral;
     
     private double supp_threshold;
-    private double confidence_threshold;
+    private double conf_threshold;
     private double lift_threshold;    
         
     private FilterExpressionHandler feh;
@@ -49,6 +51,15 @@ public class DrivingFeaturesGenerator {
     private ArrayList<DrivingFeature> userDef;
     
 
+    private String[] exclude_general_array = {"ArchID"}; 
+    // _id, factName, factID, module, factHistory are filtered in DBQueryBuilder.getSlotNames(); 
+    private String[] exclude_cost_array = {"payload-dimensions","payload-dimensions#","instruments","updated","updated2"};
+    private String[] exclude_aggregation_array ={"weights","subobj-scores"};
+    
+    private ArrayList<String> exclude_general; 
+    private ArrayList<String> exclude_cost;
+    private ArrayList<String> exclude_aggregation;
+    
     public DrivingFeaturesGenerator(){
     }
     
@@ -58,13 +69,16 @@ public class DrivingFeaturesGenerator {
         
         this.scope = scope;
         this.supp_threshold=supp;
-        this.confidence_threshold=conf;
+        this.conf_threshold=conf;
         this.lift_threshold=lift;
         this.behavioral = behavioral;
         this.non_behavioral = non_behavioral;
         drivingFeatures = new ArrayList<>();
         this.dbquery = new DBQueryBuilder();
         feh = new FilterExpressionHandler(this.dbquery);
+        
+        exclude_general = new ArrayList<String>(Arrays.asList(exclude_general_array));   
+        exclude_cost = new ArrayList<String>(Arrays.asList(exclude_cost_array));   
     }
     
  
@@ -136,7 +150,9 @@ public class DrivingFeaturesGenerator {
                 String name = feature_expression_inside.split("\\[")[0];
                 ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(feature,true);
                 double[] metrics = this.computeMetrics(matchedArchIDs);
-                drivingFeatures.add(new DrivingFeature(name,feature, metrics,false));
+                if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
+                    drivingFeatures.add(new DrivingFeature(name,feature, metrics,true));
+                }
             }            
         }else{
             // Facts in database
@@ -166,10 +182,25 @@ public class DrivingFeaturesGenerator {
             
             // Generate candidate features for all slots
             for(String slot:allSlots){
-                String[] minmax = dbquery.getMinMaxValue(scope, slot);
+                if(exclude_general.contains(slot)){
+                    continue;
+                }else if(scope.equalsIgnoreCase("cost.MANIFEST.Mission") && exclude_cost.contains(slot)){
+                    continue;
+                }
                 
+                
+                String[] minmax = dbquery.getMinMaxValue(scope, slot);
                 if(minmax[0]==null){ // The class of a given slot value is java.lang.String   
                     ArrayList<String> validValues = dbquery.getValidValueList(scope, slot);
+                    
+                    
+                    if(validValues.size()==1){
+                        continue;
+                    }else if(validValues.size() > 12){
+                        continue;
+                    }
+                    
+                    
                     for(String val:validValues){
                         String expression = slot+":"+val;
                         candidate_features.add(expression);
@@ -177,6 +208,11 @@ public class DrivingFeaturesGenerator {
                 }else{ // The class of a given slot value is java.lang.Double
                     Double min = Double.parseDouble(minmax[0]);
                     Double max = Double.parseDouble(minmax[1]);
+                    
+                    if(!Objects.equals(max, min)){
+                    } else { // min and max equal
+                        continue;
+                    }
                     
                     // Discretize continuous vars into three ranges: low, mid, high
                     Double threshold1 = (max-min)/3 + min;
@@ -274,8 +310,11 @@ public class DrivingFeaturesGenerator {
                 numOfInstance_conditions.add("gt[2]"); // At least 3
                 numOfInstance_conditions.add("lt[2]"); // less than 2
                 numOfInstance_conditions.add("lt[3]"); // less than 3
-                numOfInstance_conditions.add("gt[6]"); // more than 6
-                numOfInstance_conditions.add("gt[9]"); // more than 9                    
+                if(scope.contains("AGGREGATION")){
+                    numOfInstance_conditions.add("gt[6]"); // more than 6
+                    numOfInstance_conditions.add("gt[9]"); // more than 9   
+                }
+                 
 
                 // Generate driving features for each condition
                 for(String cond:numOfInstance_conditions){
@@ -289,7 +328,9 @@ public class DrivingFeaturesGenerator {
                     // Variable in Double: "{collectionName:gt[0],slotName:[,maxVal]}"
                     String feature_expression = "{"+scope+":"+cond+","+slot_condition+"}";
                     String feature_name = feature_expression.substring(1,feature_expression.length()-1);
-                    drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
+                    if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
+                        drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
+                    }                       
                 }
             }            
         }
@@ -322,8 +363,12 @@ public class DrivingFeaturesGenerator {
         double support = cnt_SF/cnt_all;
         double support_F = cnt_F/cnt_all;
         double support_S = cnt_S/cnt_all;
-        double lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
-        double conf_given_F = (cnt_SF)/(cnt_F);   // confidence (feature -> selection)
+        double lift=0;
+        double conf_given_F=0;
+        if(cnt_F!=0){
+            lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
+            conf_given_F = (cnt_SF)/(cnt_F);   // confidence (feature -> selection)
+        }
         double conf_given_S = (cnt_SF)/(cnt_S);   // confidence (selection -> feature)
 
     	metrics[0] = support;
@@ -336,7 +381,12 @@ public class DrivingFeaturesGenerator {
 
     private double[] computeMetrics(ArrayList<Integer> matchedArchIDs){
         
-    	double cnt_all= (double) non_behavioral.size() + behavioral.size();
+        if (matchedArchIDs.size()==0){
+            double[] metrics = {0,0,0,0};
+            return metrics;
+        }
+
+        double cnt_all= (double) non_behavioral.size() + behavioral.size();
         double cnt_F=0.0;
         double cnt_S= (double) behavioral.size();
         double cnt_SF=0.0;
@@ -358,8 +408,13 @@ public class DrivingFeaturesGenerator {
         double support = cnt_SF/cnt_all;
         double support_F = cnt_F/cnt_all;
         double support_S = cnt_S/cnt_all;
-        double lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
-        double conf_given_F = (cnt_SF)/(cnt_F);   // confidence (feature -> selection)
+        
+        double lift=0;
+        double conf_given_F=0;
+        if(cnt_F!=0){
+            lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
+            conf_given_F = (cnt_SF)/(cnt_F);   // confidence (feature -> selection)
+        }
         double conf_given_S = (cnt_SF)/(cnt_S);   // confidence (selection -> feature)
 
     	metrics[0] = support;
