@@ -327,7 +327,7 @@ public class DrivingFeaturesGenerator {
                     // Variable in Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
                     // Variable in Double: "{collectionName:gt[0],slotName:[,maxVal]}"
                     String feature_expression = "{"+scope+":"+cond+","+slot_condition+"}";
-                    String feature_name = feature_expression.substring(1,feature_expression.length()-1);
+                    String feature_name = scope + ":" + slotName;
                     if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
                         drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
                     }                       

@@ -206,14 +206,11 @@ function runDataMining(scope) {
 
     sortedDFs = generateDrivingFeatures(scope,selectedBitStrings,nonSelectedBitStrings,
                             support_threshold,confidence_threshold,lift_threshold,"lift");
+
+    display_drivingFeatures(sortedDFs,"lift");
     
     
     
-    
-    
-    
-//    
-//    display_drivingFeatures(sortedDFs,"lift");
 //    if(testType=="3"){
 //        jsonObj_tree = buildClassificationTree();
 //        display_classificationTree(jsonObj_tree);
@@ -349,9 +346,9 @@ function display_drivingFeatures(source,sortby) {
 
     var size = source.length;
     var drivingFeatures = [];
-    var drivingFeatureNames = [];
-    var drivingFeatureTypes = [];
-    i_drivingFeatures=0;
+    var df_name = [];
+    var df_expression = [];
+    var i_drivingFeatures=0;
     var lifts=[];
     var supps=[];
     var conf1s=[];
@@ -363,16 +360,11 @@ function display_drivingFeatures(source,sortby) {
         conf1s.push(source[i].metrics[2]);
         conf2s.push(source[i].metrics[3]);
         drivingFeatures.push(source[i]);
-        if(source[i].preset===true){
-            drivingFeatureNames.push(source[i].name);
-            drivingFeatureTypes.push(source[i].type);
-        } else{
-            drivingFeatureNames.push(source[i].type);
-            drivingFeatureTypes.push(source[i].name);
-        }
+        df_name.push(source[i].name);
+        df_expression.push(source[i].expression);
     }
 
-//                    InOrbit [orbit,inst1,inst2];
+//  InOrbit [orbit,inst1,inst2];
 
     var margin_df = {top: 20, right: 20, bottom: 10, left:65},
     width_df = 800 - 35 - margin_df.left - margin_df.right,
@@ -574,14 +566,14 @@ function display_drivingFeatures(source,sortby) {
                 var xCoord = xScale_df(d.id);
                 return "translate(" + xCoord + "," + 0 + ")";
             })
-            .style("fill", function(d,i){return color_drivingFeatures(drivingFeatureTypes[i]);});
+            .style("fill", function(d,i){return color_drivingFeatures(df_name[i]);});
     dfbar_width = d3.select("[class=bar]").attr("width");
 
     var bars = d3.selectAll("[class=bar]")
    
                 .on("mouseover",function(d){
 
-                	numOfDrivingFeatureViewed = numOfDrivingFeatureViewed+1;
+                    numOfDrivingFeatureViewed = numOfDrivingFeatureViewed+1;
                 	
                     var mouseLoc_x = d3.mouse(d3.select("[id=basicInfoBox_div]").select("[id=view3]").select("[class=dfbars_svg]")[0][0])[0];
                     var mouseLoc_y = d3.mouse(d3.select("[id=basicInfoBox_div]").select("[id=view3]").select("[class=dfbars_svg]")[0][0])[1];
@@ -615,12 +607,13 @@ function display_drivingFeatures(source,sortby) {
                                                 .style("fill","#4B4B4B")
                                                 .style("opacity", 0.92);
                     var tmp= d.id;
-                    var name = relabelDrivingFeatureName(d.name);
-                    var type = d.type;
+                    var name = d.name;
+                    var expression = d.expression;
                     var lift = d.metrics[1];
                     var supp = d.metrics[0];
                     var conf = d.metrics[2];
                     var conf2 = d.metrics[3];
+                    var preset = d.preset;
 
                     d3.selectAll("[class=bar]").filter(function(d){
                         if(d.id===tmp){
@@ -631,79 +624,40 @@ function display_drivingFeatures(source,sortby) {
                     }).style("stroke-width",1.5)
                             .style("stroke","black");
 
-                    
-                    if(type=="present" || type=="absent" || type=="inOrbit" ||type=="notInOrbit"||type=="together2"||
-                    		type=="togetherInOrbit2"||type=="separate2"||type=="together3"||type=="togetherInOrbit3"||
-                    		type=="separate3"||type=="emptyOrbit"||type=="numOrbits"|| type=="numOfInstruments"){
-                    	
-                    	var type_modified;
-                    	var filterInputs = [];
-                    	
-                    	if(type=="together2"||type=="together3"||type=="separate2"||type=="separate3"||
-                    		type=="togetherInOrbit2"||type=="togetherInOrbit3"){
-                    		type_modified = type.substring(0,type.length-1);
-                    	}else{
-                    		type_modified = type;
-                    	}
-                    	
-                    	var arg = name.substring(name.indexOf("[")+1,name.indexOf("]"));
-                            
-                        	
-                    	if(type_modified=="present" || type_modified=="absent" || type_modified=="emptyOrbit"
-                    				|| type_modified=="numOrbits" || type_modified=="together" 
-                    					|| type_modified=="separate" || type_modified=="numOfInstruments"){
-                    		filterInputs.push(arg);
-                    	}else if(type_modified=="inOrbit" || type_modified=="notInOrbit" || 
-                    											type_modified=="togetherInOrbit"){
-                    		var first = arg.substring(0,arg.indexOf(","));
-                    		var second = arg.substring(arg.indexOf(",")+1);
-                    		filterInputs.push(first);
-                    		filterInputs.push(second);
-                    	} else{
-                    		filterInputs.push(arg);
-                    	}
-                            
-                        d3.selectAll("[class=dot]")[0].forEach(function (d) {
-                        	var bitString = d.__data__.bitString;
-                            var temp = presetFilter2(type_modified,bitString,filterInputs,false);
-                            if(temp==null){
-                            	return;
-                            }
-                            else if (temp){
-                    			d3.select(d).attr("class", "dot_DFhighlighted")
-                    						.style("fill", "#F75082");
-                			}
-                        });
-                        d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
-                        	var bitString = d.__data__.bitString;
-                            var temp = presetFilter2(type_modified,bitString,filterInputs,false);
-                            if(temp==null){
-                            	return;
-                            }
-                            else if (temp){
-                    			d3.select(d).attr("class", "dot_selected_DFhighlighted")
-                    						.style("fill", "#F75082");
-                			}
+
+
+                    if(preset==true){
+                        var matchedArchIDs;
+                        $.ajax({
+                            url: "DrivingFeatureServlet",
+                            type: "POST",
+                            data: {ID: "applyComplexFilter",filterExpression:expression},
+                            async: false,
+                            success: function (data, textStatus, jqXHR)
+                            {
+                                matchedArchIDs = JSON.parse(data);
+                            },
+                            error: function (jqXHR, textStatus, errorThrown)
+                            {alert("Error in applying the filter");}
                         });
 
-                    }else{
-                    		type_modified = type;
-                            d3.selectAll("[class=dot]")[0].forEach(function (d) {
-                            	var bitString = d.__data__.bitString;
-                        		if (applyUserDefFilterFromExpression(type_modified,bitString)){
-                        			d3.select(d).attr("class", "dot_DFhighlighted")
-                        						.style("fill", "#F75082");
-                    			}
-                            });
-                            d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
-                            	var bitString = d.__data__.bitString;
-                        		if (applyUserDefFilterFromExpression(type_modified,bitString)){
-                        			d3.select(d).attr("class", "dot_selected_DFhighlighted")
-                        						.style("fill", "#F75082");
-                    			}
-                            });
+
+                        d3.selectAll(".dot")[0].forEach(function (d) {
+                            var id = d.__data__.ArchID;
+                            if($.inArray(id,matchedArchIDs)!==-1){
+                                d3.select(d).attr('class','dot_DFhighlighted')
+                                            .style("fill", "#F75082");
+                            }
+                        });
+                        
+                        d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
+                            var id = d.__data__.ArchID;
+                            if($.inArray(id,matchedArchIDs)!==-1){
+                                d3.select(d).attr('class','dot_DFhighlighted')
+                                            .style("fill", "#F75082");
+                            }
+                        });
                     }
-                    
 
                     
                     var fo = d3.select("[id=basicInfoBox_div]").select("[id=view3]").select("[class=dfbars_svg]")
@@ -726,13 +680,10 @@ function display_drivingFeatures(source,sortby) {
                                                 'class': 'fo_tooltip'
                                             });
                     var textdiv = fo_div.selectAll("div")
-                            .data([{name:name,supp:supp,conf:conf,conf2:conf2,lift:lift}])
+                            .data([{name:expression,supp:supp,conf:conf,conf2:conf2,lift:lift}])
                             .enter()
                             .append("div")
                             .style("padding","15px");
-//                            .style("margin-left","15px")
-//                            .style("margin-top","10px");
-                          
 //                    
                     textdiv.html(function(d){
                         var output= "" + d.name + "<br><br> The % of designs in the intersection out of all designs: " + round_num_2_perc(d.supp) + 
@@ -775,9 +726,6 @@ function display_drivingFeatures(source,sortby) {
                 });
 
 
-    
-    if(testType==="4"){
-    }else{
         // draw legend
         var legend_df = objects.selectAll(".legend")
                         .data(color_drivingFeatures.domain())
@@ -799,7 +747,7 @@ function display_drivingFeatures(source,sortby) {
                 .attr("dy", ".35em")
                 .style("text-anchor", "end")
                 .text(function(d) { return d;});
-    }
+    
     
 
     d3.select("[id=instrumentOptions]")
