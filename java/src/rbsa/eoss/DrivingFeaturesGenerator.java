@@ -54,11 +54,15 @@ public class DrivingFeaturesGenerator {
     private String[] exclude_general_array = {"ArchID"}; 
     // _id, factName, factID, module, factHistory are filtered in DBQueryBuilder.getSlotNames(); 
     private String[] exclude_cost_array = {"payload-dimensions","payload-dimensions#","instruments","updated","updated2"};
-    private String[] exclude_aggregation_array ={"weights","subobj-scores"};
+    private String[] exclude_aggregation_array ={"index","subobj-scores","weights","subobj-scores"};
+    private String[] exclude_science_mission_array = {"Name","payload-dimensions","payload-dimensions#","instruments"};
+    private String[] exclude_science_measurement_array = {"taken-by","Id","Horizontal-Spatial-Resolution","orbit-string","Parameter"};
     
     private ArrayList<String> exclude_general; 
     private ArrayList<String> exclude_cost;
     private ArrayList<String> exclude_aggregation;
+    private ArrayList<String> exclude_science_mission;
+    private ArrayList<String> exclude_science_measurement;
     
     public DrivingFeaturesGenerator(){
     }
@@ -78,7 +82,9 @@ public class DrivingFeaturesGenerator {
         feh = new FilterExpressionHandler(this.dbquery);
         
         exclude_general = new ArrayList<String>(Arrays.asList(exclude_general_array));   
-        exclude_cost = new ArrayList<String>(Arrays.asList(exclude_cost_array));   
+        exclude_cost = new ArrayList<String>(Arrays.asList(exclude_cost_array)); 
+        exclude_science_mission = new ArrayList<String>(Arrays.asList(exclude_science_mission_array));
+        exclude_science_measurement = new ArrayList<String>(Arrays.asList(exclude_science_measurement_array));
     }
     
  
@@ -176,117 +182,160 @@ public class DrivingFeaturesGenerator {
             // Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
             // Double: "{collectionName:gt[0],slotName:[,maxVal]}"
             // Conditions put on multiple slots: "{collectionName:gt[0],slotName:[minVal;],slotName:String}"
-            
-            
-            ArrayList<String> allSlots = dbquery.getSlotNames(scope);
-            
-            // Generate candidate features for all slots
-            for(String slot:allSlots){
-                if(exclude_general.contains(slot)){
-                    continue;
-                }else if(scope.equalsIgnoreCase("cost.MANIFEST.Mission") && exclude_cost.contains(slot)){
-                    continue;
+                        
+            if(scope.contains("AGGREGATION")){
+                ArrayList<String> slots = new ArrayList<>();
+                slots.add("id");
+                if(!scope.contains("STAKEHOLDER")){
+                    slots.add("parent");
                 }
-                
-                
-                String[] minmax = dbquery.getMinMaxValue(scope, slot);
-                if(minmax[0]==null){ // The class of a given slot value is java.lang.String   
+                for(String slot:slots){
                     ArrayList<String> validValues = dbquery.getValidValueList(scope, slot);
-                    
-                    
-                    if(validValues.size()==1){
-                        continue;
-                    }else if(validValues.size() > 12){
-                        continue;
-                    }
-                    
-                    
                     for(String val:validValues){
-                        String expression = slot+":"+val;
-                        candidate_features.add(expression);
-                    }                    
-                }else{ // The class of a given slot value is java.lang.Double
-                    Double min = Double.parseDouble(minmax[0]);
-                    Double max = Double.parseDouble(minmax[1]);
-                    
-                    if(!Objects.equals(max, min)){
-                    } else { // min and max equal
+                        // Discretize continuous space (5 intervals)
+                        ArrayList<double[]> thresholds = this.discretize_continuous_range(0.0,1.0,5);
+                        for(int i=0;i<thresholds.size();i++){
+                            String expression;
+                            double[] th = thresholds.get(i);
+                            if(i==0){
+                                expression = "satisfaction:[;"+th[0]+"]";
+                            }else if(i==thresholds.size()-1){
+                                expression = "satisfaction:["+th[0]+";]";
+                            }else{
+                                expression = "satisfaction:["+th[0]+";"+th[1]+"]";
+                            }
+                            expression = expression +","+ slot+ ":" + val;
+                            candidate_features.add(expression);
+                        }
+                    }        
+
+                }
+            }else{
+                ArrayList<String> allSlots = dbquery.getSlotNames(scope);
+                
+                // Generate candidate features for all slots
+                for(String slot:allSlots){
+
+                    if(exclude_general.contains(slot)){
+                        continue;
+                    }else if(scope.equalsIgnoreCase("cost.MANIFEST.Mission") && exclude_cost.contains(slot)){
+                        continue;
+                    }else if(scope.equalsIgnoreCase("science.MANIFEST.Mission") && exclude_science_mission.contains(slot)){
+                        continue;
+                    }else if(scope.equalsIgnoreCase("science.REQUIREMENTS.Measurement")&& exclude_science_measurement.contains(slot)){
                         continue;
                     }
-                    
-                    // Discretize continuous vars into three ranges: low, mid, high
-                    Double threshold1 = (max-min)/3 + min;
-                    Double threshold2 = (max-min)/3*2 + min;
-                    
-                    String low = slot+":[;"+threshold1+"]";
-                    String mid = slot+":["+threshold1+";"+threshold2+"]";
-                    String high = slot+":["+threshold2+";]";
-                    candidate_features.add(low);
-                    candidate_features.add(mid);
-                    candidate_features.add(high);
-                }
+
+                    String[] minmax = dbquery.getMinMaxValue(scope, slot);
+                    if(minmax[0]==null){ // The class of a given slot value is java.lang.String   
+                        ArrayList<String> validValues = dbquery.getValidValueList(scope, slot);
+
+
+                        if(validValues.size()==1){
+                            continue;
+                        }else if(validValues.size() > 12){
+                            continue;
+                        }
+
+                        for(String val:validValues){
+                            String expression = slot+":"+val;
+                            candidate_features.add(expression);
+                        }                    
+                    }else{ // The class of a given slot value is java.lang.Double
+                        Double min = Double.parseDouble(minmax[0]);
+                        Double max = Double.parseDouble(minmax[1]);
+
+                        if(!Objects.equals(max, min)){
+                        } else { // min and max equal
+                            continue;
+                        }
+                        // Discretize continuous space (3 intervals)
+                        ArrayList<double[]> thresholds = this.discretize_continuous_range(min, max, 3);
+                        for(int i=0;i<thresholds.size();i++){
+                            
+                            String expression;
+                            double[] th = thresholds.get(i);
+                            if(i==0){
+                                expression = slot+":[;"+th[0]+"]";
+                            }else if(i==thresholds.size()-1){
+                                expression = slot+":["+th[0]+";]";
+                            }else{
+                                expression = slot+":["+th[0]+";"+th[1]+"]";
+                            }
+                            
+                            candidate_features.add(expression);
+                        }
+                    }
+                }            
             }
-            
+
             
             // For each candidate_feature(defined for each slot), make a query and count the number of instances of Facts
-            for(String slot_condition:candidate_features){
+            for(String slot_conditions:candidate_features){
                 // Examples of slot_condition
                 // slotName:String
                 // slotName:[minVal;maxVal]
                 // slotName:[;maxVal]
                 // slotName:[minVal;]
-                // slotName:[val]
+                // slotName:[val], slotName:[val2]
                 
+                String[] slot_conditions_split = slot_conditions.split(",");
+
                 ArrayList<String> slotNames = new ArrayList<>();
                 ArrayList<String> conditions = new ArrayList<>();
                 ArrayList<String> values = new ArrayList<>();
                 ArrayList<String> valueTypes = new ArrayList<>();
 
-                String[] exp_split = slot_condition.split(":");
-                String slotName = exp_split[0];
-                String arguments = exp_split[1];
-                
-                // Set up conditions to make a query
-                if(arguments.startsWith("[")){ // Numeric argument
-                    // Remove square brackets
-                    arguments = arguments.substring(1,arguments.length()-1); 
-                    
-                    if(arguments.contains(";")){
-                        // Range given
-                        String[] argSplit = arguments.split(";");
-                        if(argSplit[0].isEmpty()){ // Only max value specified
-                            slotNames.add(slotName);
-                            conditions.add("lt");
-                            values.add(argSplit[1]);
-                            valueTypes.add("Double");
-                        }else if(argSplit.length==1){ // Only min value specified
-                            slotNames.add(slotName);
-                            conditions.add("gt");
-                            values.add(argSplit[0]);
-                            valueTypes.add("Double");
-                        }else{ // Both min and max values specified
-                            slotNames.add(slotName);
-                            conditions.add("gt");
-                            values.add(argSplit[0]);
-                            valueTypes.add("Double");
-                            slotNames.add(slotName);
-                            conditions.add("lt");
-                            values.add(argSplit[1]);
-                            valueTypes.add("Double");                            
+                for(String slot_condition:slot_conditions_split){
+
+                    String[] exp_split = slot_condition.split(":");
+                    String slotName = exp_split[0];
+                    String arguments = exp_split[1];
+
+                    // Set up conditions to make a query
+                    if(arguments.startsWith("[")){ // Numeric argument
+                        // Remove square brackets
+                        arguments = arguments.substring(1,arguments.length()-1); 
+
+                        if(arguments.contains(";")){
+                            // Range given
+                            String[] argSplit = arguments.split(";");
+                            if(argSplit[0].isEmpty()){ // Only max value specified
+                                slotNames.add(slotName);
+                                conditions.add("lt");
+                                values.add(argSplit[1]);
+                                valueTypes.add("Double");
+                            }else if(argSplit.length==1){ // Only min value specified
+                                slotNames.add(slotName);
+                                conditions.add("gt");
+                                values.add(argSplit[0]);
+                                valueTypes.add("Double");
+                            }else{ // Both min and max values specified
+                                slotNames.add(slotName);
+                                conditions.add("gt");
+                                values.add(argSplit[0]);
+                                valueTypes.add("Double");
+                                slotNames.add(slotName);
+                                conditions.add("lt");
+                                values.add(argSplit[1]);
+                                valueTypes.add("Double");                            
+                            }
+                        }else{
+                            // Exact value given
+                                slotNames.add(slotName);
+                                conditions.add("eq");
+                                values.add(arguments);
+                                valueTypes.add("Double");
                         }
-                    }else{
-                        // Exact value given
-                            slotNames.add(slotName);
-                            conditions.add("eq");
-                            values.add(arguments);
-                            valueTypes.add("Double");
+                    }else{ // String argument
+                        slotNames.add(slotName);
+                        conditions.add("eq");
+                        values.add(arguments);
+                        valueTypes.add("String");
                     }
-                }else{ // String argument
-                    slotNames.add(slotName);
-                    conditions.add("eq");
-                    values.add(arguments);
-                    valueTypes.add("String");
                 }
+
+                
                 // Make a query on Facts and get the ID's of architectures that contain those Facts
                 ArrayList<Integer> matchedArchIDs = dbquery.makeQuery_ArchID(scope, slotNames, conditions, values, valueTypes);
                 
@@ -313,9 +362,9 @@ public class DrivingFeaturesGenerator {
                 if(scope.contains("AGGREGATION")){
                     numOfInstance_conditions.add("gt[6]"); // more than 6
                     numOfInstance_conditions.add("gt[9]"); // more than 9   
+                    numOfInstance_conditions.add("gt[12]");
                 }
                  
-
                 // Generate driving features for each condition
                 for(String cond:numOfInstance_conditions){
                     String inequalitySign = cond.split("\\[")[0];
@@ -326,8 +375,8 @@ public class DrivingFeaturesGenerator {
                     // Variable in String: "{collectionName:gt[0],slotName:String}"
                     // Variable in Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
                     // Variable in Double: "{collectionName:gt[0],slotName:[,maxVal]}"
-                    String feature_expression = "{"+scope+":"+cond+","+slot_condition+"}";
-                    String feature_name = scope + ":" + slotName;
+                    String feature_expression = "{"+scope+":"+cond+","+slot_conditions+"}";
+                    String feature_name = scope + ":" + slotNames.get(0);
                     if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
                         drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
                     }                       
@@ -335,6 +384,30 @@ public class DrivingFeaturesGenerator {
             }            
         }
         return this.drivingFeatures;
+    }
+    
+    
+    
+    private ArrayList<double[]> discretize_continuous_range(double min, double max, int n){
+        // Discretize continuous vars into discrete ranges 
+        ArrayList<double[]> thresholds = new ArrayList<>();
+        double interval = (max-min)/n;
+        for(int i=0;i<n;i++){
+            double[] range;
+            if(i==0){
+                range = new double[1];
+                range[0]=min + interval*(i+1);
+            }else if(i==n-1){
+                range= new double[1];
+                range[0]=min + interval*i;
+            }else{
+                range = new double[2];
+                range[0] = min + interval * i;
+                range[1] = min + interval * (i+1);
+            }
+            thresholds.add(range);
+        }
+        return thresholds;
     }
         
   
@@ -428,269 +501,13 @@ public class DrivingFeaturesGenerator {
 
 
     
-    
-    
-    
-
-    
-        
-//        Scheme scheme = new Scheme();
-//        scheme.setName("present");
-//        for (int i = 0; i < ninstr; ++i) {
-//            scheme.setInstrument (i);
-//            double[] metrics = computeMetrics(scheme);
-//            if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                String[] param = new String[1];
-//                param[0] = Params.instrument_list[i];
-//                String featureName = "present[" + param[0] + "]";
-//                drivingFeatures.add(new DrivingFeature(featureName,"present", param, metrics));
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("absent");
-//        for (int i = 0; i < ninstr; ++i) {
-//            scheme.setInstrument (i);
-//            double[] metrics = computeMetrics(scheme);
-//            if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                String [] param = new String[1];
-//                param[0] = Params.instrument_list[i];
-//                String featureName = "absent[" + param[0] + "]";
-//                drivingFeatures.add(new DrivingFeature(featureName,"absent", param, metrics));
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("inOrbit");
-//        for (int i = 0; i < norb; ++i) {
-//            for (int j = 0; j < ninstr; ++j) {
-//                scheme.setInstrument (j);
-//                scheme.setOrbit(i);
-//                double[] metrics = computeMetrics(scheme);
-//                if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                    String[] param = new String[2];
-//                    param[0] = Params.orbit_list[i];
-//                    param[1] = Params.instrument_list[j];
-//                    String featureName = "inOrbit[" + param[0] + "," + param[1] + "]";
-//                    drivingFeatures.add(new DrivingFeature(featureName,"inOrbit", param, metrics));
-//                }
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("notInOrbit");
-//        for (int i = 0; i < norb; ++i) {
-//            for (int j = 0; j < ninstr; ++j) {
-//                scheme.setInstrument (j);
-//                scheme.setOrbit(i);
-//                double[] metrics = computeMetrics(scheme);
-//                if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                    String[] param = new String[2];
-//                    param[0] = Params.orbit_list[i];
-//                    param[1] = Params.instrument_list[j];
-//                    String featureName = "notInOrbit[" + param[0] + "," + param[1] + "]";
-//                    drivingFeatures.add(new DrivingFeature(featureName,"notInOrbit", param, metrics));
-//                } 
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("together2");
-//        for (int i = 0; i < ninstr; ++i) {
-//            for (int j = 0; j < i; ++j) {
-//                scheme.setInstrument(i);
-//                scheme.setInstrument2(j);
-//                double[] metrics = computeMetrics(scheme);
-//                if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                    String[] param = new String[2];
-//                    param[0] = Params.instrument_list[i];
-//                    param[1] = Params.instrument_list[j];
-//                    String featureName = "together2[" + param[0] + "," + param[1] + "]";
-//                    drivingFeatures.add(new DrivingFeature(featureName,"together2", param, metrics));
-//                }
-//            }
-//        }     
-//        scheme.clearArgs();
-//        scheme.setName("togetherInOrbit2");
-//        for (int i = 0; i < norb; ++i) {
-//            for (int j = 0; j < ninstr; ++j) {
-//                for (int k = 0; k < j; ++k) {
-//                    scheme.setInstrument(j);
-//                    scheme.setInstrument2(k);
-//                    scheme.setOrbit(i);
-//                    double[] metrics = computeMetrics(scheme);
-//                    if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                        String[] param = new String[3];
-//                        param[0] = Params.orbit_list[i];
-//                        param[1] = Params.instrument_list[j];
-//                        param[2] = Params.instrument_list[k];
-//                        String featureName = "togetherInOrbit2[" + param[0] + "," + param[1] + 
-//                                "," + param[2] + "]"; 
-//                        drivingFeatures.add(new DrivingFeature(featureName,"togetherInOrbit2", param,metrics));
-//                    }
-//                }
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("separate2");
-//        for (int i = 0; i < ninstr; ++i) {
-//            for (int j = 0; j < i; ++j) {
-//                scheme.setInstrument(i);
-//                scheme.setInstrument2(j);
-//                double[] metrics = computeMetrics(scheme);
-//                if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                        String[] param = new String[2];
-//                        param[0] = Params.instrument_list[i];
-//                        param[1] = Params.instrument_list[j];
-//                        String featureName = "separate2[" + param[0] + "," + param[1] + "]";
-//                        drivingFeatures.add(new DrivingFeature(featureName,"separate2", param, metrics));
-//                    }
-//            }            
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("together3");
-//        for (int i = 0; i < ninstr; ++i) {
-//            for (int j = 0; j < i; ++j) {
-//                for (int k = 0; k < j; ++k) {
-//                    scheme.setInstrument(i);
-//                    scheme.setInstrument2(j);
-//                    scheme.setInstrument3(k);
-//                    double[] metrics = computeMetrics(scheme);
-//                    if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                        String[] param = new String[3];
-//                        param[0] = Params.instrument_list[i];
-//                        param[1] = Params.instrument_list[j];
-//                        param[2] = Params.instrument_list[k];
-//                        String featureName = "together3[" + param[0] + "," + 
-//                                            param[1] + "," + param[2] + "]";
-//                        drivingFeatures.add(new DrivingFeature(featureName,"together3", param, metrics));
-//                    }
-//                }
-//            }            
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("togetherInOrbit3");
-//        for (int i = 0; i < norb; ++i) {
-//            for (int j = 0; j < ninstr; ++j) {
-//                for (int k = 0; k < j; ++k) {
-//                    for (int l = 0; l < k; ++l) {
-//                        scheme.setName("togetherInOrbit3");
-//                        scheme.setInstrument(j);
-//                        scheme.setInstrument2(k);
-//                        scheme.setInstrument3(l);
-//                        scheme.setOrbit(i);
-//                        double[] metrics = computeMetrics(scheme);
-//                        if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                            String[] param = new String[4];
-//                            param[0] = Params.orbit_list[i];
-//                            param[1] = Params.instrument_list[j];
-//                            param[2] = Params.instrument_list[k];
-//                            param[3] = Params.instrument_list[l];
-//                            String featureName = "togetherInOrbit3[" + param[0] + "," + 
-//                                                param[1] + "," + param[2] + "," + param[3] + "]";
-//                            drivingFeatures.add(new DrivingFeature(featureName,"togetherInOrbit3", param, metrics));
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("separate3");
-//        for (int i = 0; i < ninstr; ++i) {
-//            for (int j = 0; j < i; ++j) {
-//                for (int k = 0; k < j; ++k) {
-//                    scheme.setInstrument(i);
-//                    scheme.setInstrument2(j);
-//                    scheme.setInstrument3(k);
-//                    double[] metrics = computeMetrics(scheme);
-//                    if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                        String[] param = new String[3];
-//                        param[0] = Params.instrument_list[i];
-//                        param[1] = Params.instrument_list[j];
-//                        param[2] = Params.instrument_list[k];
-//                        String featureName = "separate3[" + param[0] + "," + 
-//                                            param[1] + "," + param[2] + "]";
-//                        drivingFeatures.add(new DrivingFeature(featureName,"separate3", param, metrics));
-//                    }
-//                }
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("emptyOrbit");
-//        for (int i = 0; i < norb; ++i) {
-//            scheme.setOrbit(i);
-//            double[] metrics = computeMetrics(scheme);
-//            if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                String[] param = new String[1];
-//                param[0] = Params.orbit_list[i];
-//                String featureName = "emptyOrbit[" + param[0] + "]";
-//                drivingFeatures.add(new DrivingFeature(featureName,"emptyOrbit", param, metrics));
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("numOrbits");
-//        for (int i = 1; i < norb+1; i++) {
-//            scheme.setNumOrbits(i);
-//            double[] metrics = computeMetrics(scheme);
-//            if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                String[] param = new String[1];
-//                param[0] = "" + i;
-//                String featureName = "numOrbits[" + param[0] + "]";
-//                drivingFeatures.add(new DrivingFeature(featureName,"numOrbits", param, metrics));
-//            }
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("numOfInstruments");
-//        for (int i = 0; i < ninstr; i++) {
-//        	for(int j=0; j< norb + 1;j++){
-//                scheme.setInstrument(i);
-//                scheme.setNumInstruments(j);
-//                double[] metrics = computeMetrics(scheme);
-//                if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                    
-//                    String[] param = new String[2];
-//                    param[0] = Params.instrument_list[i];
-//                    param[1] = Integer.toString(j);
-//                    String featureName = "numOfInstruments[" + param[0] + "," + 
-//                                        param[1] + "]";
-//                    drivingFeatures.add(new DrivingFeature(featureName,"numOfInstruments", param, metrics));
-//                }
-//        	}
-//        }
-//        scheme.clearArgs();
-//        scheme.setName("numOfInstruments");
-//    	for(int i=1; i< 16;i++){
-//            scheme.setNumInstruments(i);
-//            double[] metrics = computeMetrics(scheme);
-//            if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                
-//                String[] param = new String[1];
-//                param[0] = Params.instrument_list[i];
-//                String featureName = "numOfInstruments[" + param[0] +"]";
-//                drivingFeatures.add(new DrivingFeature(featureName,"numOfInstruments", param, metrics));
-//            }
-//    	}        
-
-
-//        
-//        
-//        for (DrivingFeature userDef1:userDef){
-////            System.out.println(userDef1.getName());
-////            System.out.println(userDef1.getType());
-//            
-//            scheme.setName(userDef1.getType());
-//            double[] metrics = computeMetrics(scheme);
-//            if (metrics[0] > supp_threshold && metrics[1] > lift_threshold && metrics[2] > confidence_threshold && metrics[3] > confidence_threshold) {
-//                drivingFeatures.add(new DrivingFeature(userDef1.getName(),userDef1.getType(),metrics));
-//            }
-//        }
-//        
 //        getDataFeatureMat();
-        
 //        System.out.println("----------mRMR-----------");
 //        ArrayList<String> mRMR = minRedundancyMaxRelevance(40);
 //        for(String mrmr:mRMR){
 //            System.out.println(drivingFeatures.get(Integer.parseInt(mrmr)).getName());
 //        }
 
-//        return drivingFeatures;
-//    }
     
     
     public int[][] booleanToInt(boolean[][] b) {
@@ -1002,12 +819,7 @@ public class DrivingFeaturesGenerator {
 //        
 //        return graph;
 //    }
-    
 
-    
-    public void addUserDefFilter(String name, String expression){
-        this.userDef.add(new DrivingFeature(name,expression));
-    }
     
     
 
