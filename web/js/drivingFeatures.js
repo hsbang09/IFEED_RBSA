@@ -188,7 +188,7 @@ function runDataMining(scope) {
     }
 
     buttonClickCount_drivingFeatures += 1;
-    getDrivingFeatures_numOfArchs.push({numOfSelectedArchs,numOfNonSelectedArchs});
+    getDrivingFeatures_numOfArchs.push([numOfSelectedArchs,numOfNonSelectedArchs]);
     getDrivingFeatures_thresholds.push({supp:support_threshold,lift:lift_threshold,conf:confidence_threshold});
 
 
@@ -206,11 +206,8 @@ function runDataMining(scope) {
 
     sortedDFs = generateDrivingFeatures(scope,selectedBitStrings,nonSelectedBitStrings,
                             support_threshold,confidence_threshold,lift_threshold,"lift");
-
     display_drivingFeatures(sortedDFs,"lift");
-    
-    
-    
+
 //    if(testType=="3"){
 //        jsonObj_tree = buildClassificationTree();
 //        display_classificationTree(jsonObj_tree);
@@ -625,39 +622,37 @@ function display_drivingFeatures(source,sortby) {
                             .style("stroke","black");
 
 
-
-                    if(preset==true){
-                        var matchedArchIDs;
-                        $.ajax({
-                            url: "DrivingFeatureServlet",
-                            type: "POST",
-                            data: {ID: "applyComplexFilter",filterExpression:expression},
-                            async: false,
-                            success: function (data, textStatus, jqXHR)
-                            {
-                                matchedArchIDs = JSON.parse(data);
-                            },
-                            error: function (jqXHR, textStatus, errorThrown)
-                            {alert("Error in applying the filter");}
-                        });
+                    var matchedArchIDs;
+                    $.ajax({
+                        url: "DrivingFeatureServlet",
+                        type: "POST",
+                        data: {ID: "applyComplexFilter",filterExpression:expression},
+                        async: false,
+                        success: function (data, textStatus, jqXHR)
+                        {
+                            matchedArchIDs = JSON.parse(data);
+                        },
+                        error: function (jqXHR, textStatus, errorThrown)
+                        {alert("Error in applying the filter");}
+                    });
 
 
-                        d3.selectAll(".dot")[0].forEach(function (d) {
-                            var id = d.__data__.ArchID;
-                            if($.inArray(id,matchedArchIDs)!==-1){
-                                d3.select(d).attr('class','dot_DFhighlighted')
-                                            .style("fill", "#F75082");
-                            }
-                        });
-                        
-                        d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
-                            var id = d.__data__.ArchID;
-                            if($.inArray(id,matchedArchIDs)!==-1){
-                                d3.select(d).attr('class','dot_DFhighlighted')
-                                            .style("fill", "#F75082");
-                            }
-                        });
-                    }
+                    d3.selectAll(".dot")[0].forEach(function (d) {
+                        var id = d.__data__.ArchID;
+                        if($.inArray(id,matchedArchIDs)!==-1){
+                            d3.select(d).attr('class','dot_DFhighlighted')
+                                        .style("fill", "#F75082");
+                        }
+                    });
+
+                    d3.selectAll("[class=dot_highlighted]")[0].forEach(function (d) {
+                        var id = d.__data__.ArchID;
+                        if($.inArray(id,matchedArchIDs)!==-1){
+                            d3.select(d).attr('class','dot_selected_DFhighlighted')
+                                        .style("fill", "#F75082");
+                        }
+                    });
+                    
 
                     
                     var fo = d3.select("[id=basicInfoBox_div]").select("[id=view3]").select("[class=dfbars_svg]")
@@ -710,15 +705,7 @@ function display_drivingFeatures(source,sortby) {
                     
                     var highlighted = d3.selectAll("[class=dot_DFhighlighted]");
                     highlighted.attr("class", "dot")
-                            .style("fill", function (d) {
-                                if (d.status == "added") {
-                                    return "#188836";
-                                } else if (d.status == "justAdded") {
-                                    return "#20FE5B";
-                                } else {
-                                    return "#000000";
-                                }
-                            });     
+                            .style("fill", "#000000");     
                     d3.selectAll("[class=dot_selected_DFhighlighted]")
                     		.attr("class", "dot_highlighted")
                             .style("fill","#20DCCC");    
