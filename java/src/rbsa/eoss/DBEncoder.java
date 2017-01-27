@@ -45,9 +45,9 @@ public class DBEncoder {
     
     public DBEncoder(){
         try{            
-//            mongoClient = new MongoClient( "localhost" , 27017 );
-            MongoClientURI uri = new MongoClientURI("mongodb://bang:qkdgustmd@ds145828.mlab.com:45828/rbsa_eoss");
-            mongoClient = new MongoClient(uri);
+            mongoClient = new MongoClient( "localhost" , 27017 );
+//            MongoClientURI uri = new MongoClientURI("mongodb://bang:qkdgustmd@ds145828.mlab.com:45828/rbsa_eoss");
+//            mongoClient = new MongoClient(uri);
             dataCollectionNames = new ArrayList<>();
             dbquery = new DBQueryBuilder(mongoClient);
         }catch(Exception e){

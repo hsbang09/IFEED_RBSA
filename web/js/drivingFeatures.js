@@ -176,7 +176,10 @@ function runDataMining(scope) {
         display_classificationTree(jsonObj_tree);
         return;
     }
-	
+    
+    
+    processed_features = [];
+    
     var selectedArchs = d3.selectAll("[class=dot_highlighted]");
     var nonSelectedArchs = d3.selectAll("[class=dot]");
     var numOfSelectedArchs = selectedArchs.size();
@@ -212,10 +215,9 @@ function runDataMining(scope) {
 //        jsonObj_tree = buildClassificationTree();
 //        display_classificationTree(jsonObj_tree);
 //    }
-//
-//    selection_changed = false;
-
-
+    
+    
+    selection_changed = false;
 }
 
 
@@ -438,8 +440,6 @@ function display_drivingFeatures(source,sortby) {
 
     
     
-    
-    
     var df_explanation_box = infoBox.append("div")
 		.attr("id","df_explanation_box")
 		.style("float","left")
@@ -621,20 +621,28 @@ function display_drivingFeatures(source,sortby) {
                     }).style("stroke-width",1.5)
                             .style("stroke","black");
 
-
-                    var matchedArchIDs;
-                    $.ajax({
-                        url: "DrivingFeatureServlet",
-                        type: "POST",
-                        data: {ID: "applyComplexFilter",filterExpression:expression},
-                        async: false,
-                        success: function (data, textStatus, jqXHR)
-                        {
-                            matchedArchIDs = JSON.parse(data);
-                        },
-                        error: function (jqXHR, textStatus, errorThrown)
-                        {alert("Error in applying the filter");}
-                    });
+                    
+                    var matchedArchIDs=null;
+                    for(var i=0;i<processed_features.length;i++){
+                        if(processed_features[i].expression===expression){
+                            matchedArchIDs = processed_features[i].matchedArchIDs;
+                        }
+                    }
+                    if(matchedArchIDs===null){
+                        $.ajax({
+                            url: "DrivingFeatureServlet",
+                            type: "POST",
+                            data: {ID: "applyComplexFilter",filterExpression:expression},
+                            async: false,
+                            success: function (data, textStatus, jqXHR)
+                            {
+                                matchedArchIDs = JSON.parse(data);
+                            },
+                            error: function (jqXHR, textStatus, errorThrown)
+                            {alert("Error in applying the filter");}
+                        });
+                        processed_features.push({expression:expression,matchedArchIDs:matchedArchIDs});
+                    }
 
 
                     d3.selectAll(".dot")[0].forEach(function (d) {
@@ -762,32 +770,32 @@ function dfsort(){
 
 function draw_venn_diagram(df_explanation_box,supp,conf,conf2){
 
-	df_explanation_box.select("svg").remove();
-	var svg_venn_diag = df_explanation_box
-								.append("svg")
-					    		.style('width','320px')  			
-								.style('border-width','3px')
-								.style('height','305px')
-								.style('border-style','solid')
-								.style('border-color','black')
-								.style('border-radius','40px')
-								.style('margin-top','10px')
-								.style('margin-bottom','10px'); 
+    df_explanation_box.select("svg").remove();
+    var svg_venn_diag = df_explanation_box
+            .append("svg")
+            .style('width','320px')  			
+            .style('border-width','3px')
+            .style('height','305px')
+            .style('border-style','solid')
+            .style('border-color','black')
+            .style('border-radius','40px')
+            .style('margin-top','10px')
+            .style('margin-bottom','10px'); 
 
-	var F_size = supp * 1/conf;
-	var S_size = supp * 1/conf2;
-		
-	// Radius range: 30 ~ 80
-	// Intersecting distance range: 0 ~ (r1+r2)
+    var F_size = supp * 1/conf;
+    var S_size = supp * 1/conf2;
+
+    // Radius range: 30 ~ 80
+    // Intersecting distance range: 0 ~ (r1+r2)
 	
-    radius_scale = d3.scale.pow()
+    var radius_scale = d3.scale.pow()
     				.exponent(0.5)
 					.domain([0,5])
 	    			.range([10, 150]);
     var r1 = radius_scale(1);
     var	r2 = radius_scale(F_size/S_size);
     
-    intersection_scale = d3.scale.linear()
+    var intersection_scale = d3.scale.linear()
 					.domain([0,1])
 					.range([r1+r2, 20+ r2-r1]);
     

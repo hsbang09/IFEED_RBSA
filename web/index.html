@@ -338,11 +338,15 @@ and open the template in the editor.
                     yValue, yScale, yMap, yAxis;
                	
             // Driving features variables
-                var sortedDFs=null;
-           	var support_threshold = 0.015;
-           	var confidence_threshold = 0.3;
-           	var lift_threshold = 1;
+            var sortedDFs=null;
+            var support_threshold = 0.015;
+            var confidence_threshold = 0.3;
+            var lift_threshold = 1;
             	
+            var processed_features = [];   
+                
+                
+                
             // Filter option variables
             
             var preset_filter_options = [{value:"not_selected",text:"Select preset filters"},
@@ -381,8 +385,6 @@ and open the template in the editor.
       
 
             try {
-
-
 
             function importNewData(){
                 $.ajax(

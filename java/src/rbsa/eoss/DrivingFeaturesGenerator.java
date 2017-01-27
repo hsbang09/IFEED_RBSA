@@ -17,8 +17,10 @@ import java.util.ArrayList;
 //import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.List;
+import java.util.Set;
 
 import rbsa.eoss.local.Params;
 import weka.classifiers.trees.J48;
@@ -183,6 +185,9 @@ public class DrivingFeaturesGenerator {
             // Double: "{collectionName:gt[0],slotName:[,maxVal]}"
             // Conditions put on multiple slots: "{collectionName:gt[0],slotName:[minVal;],slotName:String}"
                         
+            ArrayList<Integer> allArchIDList = dbquery.getAllArchIDs(scope);          
+            
+            
             if(scope.contains("AGGREGATION")){
                 ArrayList<String> slots = new ArrayList<>();
                 slots.add("id");
@@ -338,18 +343,21 @@ public class DrivingFeaturesGenerator {
                 
                 // Make a query on Facts and get the ID's of architectures that contain those Facts
                 ArrayList<Integer> matchedArchIDs = dbquery.makeQuery_ArchID(scope, slotNames, conditions, values, valueTypes);
-                
+
                 // FactCounter counts the number of Facts corresponding to each architecture
                 HashMap<Integer,Integer> FactCounter = new HashMap<>();
+                
+                //Get unique set of IDs
+                Set<Integer> allArchIDSet = new HashSet<Integer>(allArchIDList);            
+
+                for(int id:allArchIDSet){
+                    FactCounter.put(id,0);
+                }
                 for(int id:matchedArchIDs){
                     // Keys are unique architecture ID's
-                    if(FactCounter.containsKey(id)){
-                        int cnt = FactCounter.get(id);
-                        FactCounter.put(id, cnt+1);
-                    }else{
-                        FactCounter.put(id, 1);
-                    }
-                }
+                    int cnt = FactCounter.get(id);
+                    FactCounter.put(id, cnt+1);
+                }   
 
                 // Generate conditions on the number of instances of jess Fact
                 ArrayList<String> numOfInstance_conditions = new ArrayList<>();
@@ -379,6 +387,7 @@ public class DrivingFeaturesGenerator {
                     String feature_name = scope + ":" + slotNames.get(0);
                     if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
                         drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
+                        System.out.println(feature_expression + ", conf: " + metrics[2]);
                     }                       
                 }
             }            

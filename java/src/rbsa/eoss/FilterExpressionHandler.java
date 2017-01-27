@@ -27,6 +27,7 @@ public class FilterExpressionHandler {
     private int norb;
     private int ninstr;
     private JessExpressionAnalyzer jea;
+    private HashMap<String,ArrayList<Integer>> allArchIDMap = new HashMap<>();          
 
             
     public FilterExpressionHandler(){
@@ -184,14 +185,21 @@ public class FilterExpressionHandler {
 
             // Make a query on Facts and get the ID's of architectures that contain those Facts
             ArrayList<Integer> matchedArchIDs_slot = dbq.makeQuery_ArchID(collectionName, slotNames, conditions, values, valueTypes);
-            ArrayList<Integer> allArchIDList = dbq.getAllArchIDs(collectionName);          
             
+            ArrayList <Integer> allArchIDList;
+            Set<Integer> allArchIDSet;
+            if(allArchIDMap.keySet().contains(collectionName)){
+                allArchIDList = allArchIDMap.get(collectionName);
+            }else{
+                allArchIDList = dbq.getAllArchIDs(collectionName);      
+                //Get unique set of IDs
+                allArchIDMap.put(collectionName, allArchIDList);
+            }
+            allArchIDSet = new HashSet<Integer>(allArchIDList);  
+
             // FactCounter counts the number of Facts corresponding to each architecture
             HashMap<Integer,Integer> FactCounter = new HashMap<>();
-            
-            //Get unique set of IDs
-            Set<Integer> allArchIDSet = new HashSet<Integer>(allArchIDList);            
-            
+                        
             for(int id:allArchIDSet){
                 FactCounter.put(id,0);
             }
