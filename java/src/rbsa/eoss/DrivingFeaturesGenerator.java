@@ -16,6 +16,7 @@ import java.util.ArrayList;
 //import weka.core.converters.CSVSaver;
 //import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
@@ -46,12 +47,11 @@ public class DrivingFeaturesGenerator {
         
     private FilterExpressionHandler feh;
     
-    private int[][] dataFeatureMat;
     private double ninstr;
     private double norb;
     private ArrayList<DrivingFeature> drivingFeatures;
     private ArrayList<DrivingFeature> userDef;
-    
+    private int[][] dataFeatureMat;
 
     private String[] exclude_general_array = {"ArchID"}; 
     // _id, factName, factID, module, factHistory are filtered in DBQueryBuilder.getSlotNames(); 
@@ -359,7 +359,7 @@ public class DrivingFeaturesGenerator {
                 HashMap<Integer,Integer> FactCounter = new HashMap<>();
                 
                 //Get unique set of IDs
-                Set<Integer> allArchIDSet = new HashSet<Integer>(allArchIDList);            
+                Set<Integer> allArchIDSet = new HashSet<>(allArchIDList);            
 
                 for(int id:allArchIDSet){
                     FactCounter.put(id,0);
@@ -377,7 +377,8 @@ public class DrivingFeaturesGenerator {
                 numOfInstance_conditions.add("gt[1]"); // At least 2
                 numOfInstance_conditions.add("gt[2]"); // At least 3
                 numOfInstance_conditions.add("lt[2]"); // less than 2
-                numOfInstance_conditions.add("lt[3]"); // less than 3
+                //numOfInstance_conditions.add("lt[3]"); // less than 3
+                numOfInstance_conditions.add("all[]");
                 if(scope.contains("AGGREGATION")){
                     numOfInstance_conditions.add("gt[6]"); // more than 6
                     numOfInstance_conditions.add("gt[9]"); // more than 9   
@@ -389,7 +390,12 @@ public class DrivingFeaturesGenerator {
                     String inequalitySign = cond.split("\\[")[0];
                     int argument = Integer.parseInt(cond.substring(0,cond.length()-1).split("\\[")[1]);
                     
-                    double[] metrics = computeMetrics(FactCounter,inequalitySign,argument);
+                    double[] metrics;
+                    if(inequalitySign.equalsIgnoreCase("all")){
+                        metrics = computeMetrics(FactCounter, allArchIDList);
+                    }else{
+                        metrics = computeMetrics(FactCounter,inequalitySign,argument);
+                    }
                     // Examples of feature expressions
                     // Variable in String: "{collectionName:gt[0],slotName:String}"
                     // Variable in Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
@@ -428,7 +434,46 @@ public class DrivingFeaturesGenerator {
         }
         return thresholds;
     }
+       
+    private double[] computeMetrics(HashMap<Integer,Integer> FactCounter, ArrayList<Integer> allArchIDList){
         
+    	double cnt_all= (double) non_behavioral.size() + behavioral.size();
+        double cnt_F=0.0;
+        double cnt_S= (double) behavioral.size();
+        double cnt_SF=0.0;
+        
+        boolean pass;
+        for(int uniqueArchID:FactCounter.keySet()){
+                pass=FactCounter.get(uniqueArchID)==Collections.frequency(allArchIDList,uniqueArchID);
+            if(pass){
+                cnt_F++;
+                if(behavioral.contains(uniqueArchID)){cnt_SF++;}
+            }
+        }        
+        double cnt_NS = cnt_all-cnt_S;
+        double cnt_NF = cnt_all-cnt_F;
+        double cnt_S_NF = cnt_S-cnt_SF;
+        double cnt_F_NS = cnt_F-cnt_SF;
+        
+    	double[] metrics = new double[4];
+        double support = cnt_SF/cnt_all;
+        double support_F = cnt_F/cnt_all;
+        double support_S = cnt_S/cnt_all;
+        double lift=0;
+        double conf_given_F=0;
+        if(cnt_F!=0){
+            lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
+            conf_given_F = (cnt_SF)/(cnt_F);   // confidence (feature -> selection)
+        }
+        double conf_given_S = (cnt_SF)/(cnt_S);   // confidence (selection -> feature)
+
+    	metrics[0] = support;
+    	metrics[1] = lift;
+    	metrics[2] = conf_given_F;
+    	metrics[3] = conf_given_S;
+    	
+    	return metrics;
+    }        
   
   
     private double[] computeMetrics(HashMap<Integer,Integer> FactCounter, String inequalitySign, int argument){
