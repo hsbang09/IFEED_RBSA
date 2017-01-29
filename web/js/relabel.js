@@ -122,3 +122,43 @@ function Name2Index(name,type){
         return ActualName2Index(name,type);
     }
 }
+
+
+
+function ppdf(expression,preset){
+    if(preset){
+                
+        var exp = expression;
+        if(exp[0]==="{"){
+            exp = exp.substring(1,exp.length-1);
+        }
+        var featureName = exp.split("[")[0];
+        var featureArg = exp.split("[")[1];
+        featureArg = featureArg.substring(0,featureArg.length-1);
+        
+        var orbits = featureArg.split(";")[0].split(",");
+        var instruments = featureArg.split(";")[1].split(",");
+        var numbers = featureArg.split(";")[2];
+        
+        var pporbits="";
+        var ppinstruments="";
+        for(var i=0;i<orbits.length;i++){
+            if(orbits[i].length===0){
+                continue;
+            }
+            if(i>0){pporbits = pporbits + ",";}
+            pporbits = pporbits + Index2ActualName(orbits[i], "orbit");
+        }
+        for(var i=0;i<instruments.length;i++){
+            if(instruments[i].length===0){
+                continue;
+            }
+            if(i>0){ppinstruments = ppinstruments + ",";}
+            ppinstruments = ppinstruments + Index2ActualName(instruments[i], "instrument");
+        }
+        var ppexpression = featureName + "[" + pporbits + ";" + ppinstruments + ";" + numbers + "]";
+        return ppexpression;
+    } else{
+        return expression;
+    }    
+}

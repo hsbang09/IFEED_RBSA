@@ -65,7 +65,7 @@ function df_scope_selection_dropdown_1(){
 
     if(selectedScope==="not_selected"){return;}
     if(selectedScope==="design_input"){
-        append_df_button('input_variables');
+        append_df_button('design_input');
     }else if(selectedScope==="objective"){
         
         var dropdown = d3.select('#df_scope_selection_div')
@@ -577,8 +577,8 @@ function display_drivingFeatures(source,sortby) {
                     var featureInfoLoc = {x:0,y:0};
                     var h_threshold = (width_df + margin_df.left + margin_df.right)*0.5;
                     var v_threshold = (height_df + margin_df.top + margin_df.bottom)*0.55;
-                    var tooltip_width = 350;
-                    var tooltip_height = 170;
+                    var tooltip_width = 360;
+                    var tooltip_height = 210;
                     if(mouseLoc_x >= h_threshold){
                         featureInfoLoc.x = -10 - tooltip_width;
                     } else{
@@ -679,17 +679,15 @@ function display_drivingFeatures(source,sortby) {
                                     });
                                     
                     var fo_div = fo.append('xhtml:div')
-                                            .attr({
-                                                'class': 'fo_tooltip'
-                                            });
+                                    .attr('class','fo_tooltip');
                     var textdiv = fo_div.selectAll("div")
-                            .data([{name:expression,supp:supp,conf:conf,conf2:conf2,lift:lift}])
+                            .data([{name:expression,supp:supp,conf:conf,conf2:conf2,lift:lift,preset:preset}])
                             .enter()
                             .append("div")
-                            .style("padding","15px");
+                            .style("padding","13px");
 //                    
                     textdiv.html(function(d){
-                        var output= "" + d.name + "<br><br> The % of designs in the intersection out of all designs: " + round_num_2_perc(d.supp) + 
+                        var output= "" + ppdf(d.name,d.preset) + "<br><br> The % of designs in the intersection out of all designs: " + round_num_2_perc(d.supp) + 
                         "% <br> The % of selected designs among designs with the feature: " + round_num_2_perc(d.conf) + 
                         "%<br> The % of designs with the feature among selected designs: " + round_num_2_perc(d.conf2) +"%";
                         return output;

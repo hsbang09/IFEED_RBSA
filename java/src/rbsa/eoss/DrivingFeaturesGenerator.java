@@ -67,8 +67,13 @@ public class DrivingFeaturesGenerator {
     private ArrayList<String> exclude_science_measurement;
     
     public DrivingFeaturesGenerator(){
+        this.dbquery = new DBQueryBuilder();
     }
-    
+    public DrivingFeaturesGenerator(DBQueryBuilder dbq){
+        this.dbquery = dbq;
+    }
+
+
     
     public void initialize(String scope, ArrayList<Integer> behavioral, ArrayList<Integer> non_behavioral, 
                                 double supp, double conf, double lift){
@@ -80,8 +85,10 @@ public class DrivingFeaturesGenerator {
         this.behavioral = behavioral;
         this.non_behavioral = non_behavioral;
         drivingFeatures = new ArrayList<>();
-        this.dbquery = new DBQueryBuilder();
         feh = new FilterExpressionHandler(this.dbquery);
+        
+        this.ninstr = Params.instrument_list.length;
+        this.norb = Params.orbit_list.length;
         
         exclude_general = new ArrayList<String>(Arrays.asList(exclude_general_array));   
         exclude_cost = new ArrayList<String>(Arrays.asList(exclude_cost_array)); 
@@ -95,7 +102,7 @@ public class DrivingFeaturesGenerator {
         
         ArrayList<String> candidate_features = new ArrayList<>();
         
-        if(scope.equalsIgnoreCase("input_variables")){
+        if(scope.equalsIgnoreCase("design_input")){
             // Input variables
             // present, absent, inOrbit, notInOrbit, together2, togetherInOrbit2
             // separate2, separate3, together3, togetherInOrbit3, emptyOrbit
@@ -156,10 +163,10 @@ public class DrivingFeaturesGenerator {
             for(String feature:candidate_features){
                 String feature_expression_inside = feature.substring(1,feature.length()-1);
                 String name = feature_expression_inside.split("\\[")[0];
-                ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(feature,true);
+                ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(feature_expression_inside,true);
                 double[] metrics = this.computeMetrics(matchedArchIDs);
                 if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
-                    drivingFeatures.add(new DrivingFeature(name,feature, metrics,true));
+                    drivingFeatures.add(new DrivingFeature(name,feature,metrics,true));
                 }
             }            
         }else{
@@ -261,11 +268,15 @@ public class DrivingFeaturesGenerator {
                             String expression;
                             double[] th = thresholds.get(i);
                             if(i==0){
-                                expression = slot+":[;"+th[0]+"]";
+                                double roundOff = Math.round(th[0] * 100.0) / 100.0;
+                                expression = slot+":[;"+roundOff+"]";
                             }else if(i==thresholds.size()-1){
-                                expression = slot+":["+th[0]+";]";
+                                double roundOff = Math.round(th[0] * 100.0) / 100.0;
+                                expression = slot+":["+roundOff+";]";
                             }else{
-                                expression = slot+":["+th[0]+";"+th[1]+"]";
+                                double roundOff1 = Math.round(th[0] * 100.0) / 100.0;
+                                double roundOff2 = Math.round(th[1] * 100.0) / 100.0;
+                                expression = slot+":["+roundOff1+";"+roundOff2+"]";
                             }
                             
                             candidate_features.add(expression);
@@ -387,7 +398,6 @@ public class DrivingFeaturesGenerator {
                     String feature_name = scope + ":" + slotNames.get(0);
                     if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
                         drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
-                        System.out.println(feature_expression + ", conf: " + metrics[2]);
                     }                       
                 }
             }            

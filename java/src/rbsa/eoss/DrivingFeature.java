@@ -27,7 +27,7 @@ public class DrivingFeature{
             this.name = name;
             this.expression = expression;
             this.metrics = metrics;
-            this.preset = false;
+            this.preset = preset;
         }
 
         public String getExpression(){return expression;}

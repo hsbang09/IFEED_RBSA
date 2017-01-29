@@ -23,6 +23,7 @@ import rbsa.eoss.ResultManager;
 import rbsa.eoss.Scheme;
 import rbsa.eoss.local.Params;
 import rbsa.eoss.FilterExpressionHandler;
+import rbsa.eoss.DBQueryBuilder;
 
 /**
  *
@@ -47,7 +48,9 @@ public class DrivingFeatureServlet extends HttpServlet {
     DrivingFeaturesGenerator dfsGen;
     ArrayList<DrivingFeature> DFs;
     ArrayList<DrivingFeature> sortedDFs;
-    
+    FilterExpressionHandler feh;
+    DBQueryBuilder dbq;
+
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -110,7 +113,8 @@ public class DrivingFeatureServlet extends HttpServlet {
             orbit_list = Params.orbit_list;
             scheme = new Scheme();
             init=true;
-
+            dbq = new DBQueryBuilder();
+            feh = new FilterExpressionHandler(dbq);
         }
         
         String outputString="";
@@ -143,8 +147,8 @@ public class DrivingFeatureServlet extends HttpServlet {
             
             String scope = request.getParameter("scope");
 
-            dfsGen = new DrivingFeaturesGenerator();
-            dfsGen.initialize(scope,behavioral, non_behavioral, support_threshold,confidence_threshold,lift_threshold);
+            dfsGen = new DrivingFeaturesGenerator(dbq);
+            dfsGen.initialize(scope, behavioral, non_behavioral, support_threshold,confidence_threshold,lift_threshold);
             
             
 
@@ -250,7 +254,6 @@ public class DrivingFeatureServlet extends HttpServlet {
                 isPreset = true;
             }
             
-            FilterExpressionHandler feh = new FilterExpressionHandler();
             ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(filterExpression, isPreset);
             String jsonObj = gson.toJson(matchedArchIDs);
             outputString = jsonObj;            
@@ -258,7 +261,6 @@ public class DrivingFeatureServlet extends HttpServlet {
 
         else if(requestID.equalsIgnoreCase("applyComplexFilter")){
             String filterExpression_raw = request.getParameter("filterExpression");
-            FilterExpressionHandler feh = new FilterExpressionHandler();
             ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(filterExpression_raw, new ArrayList<Integer>(), "||");
             String jsonObj = gson.toJson(matchedArchIDs);
             outputString = jsonObj;            

@@ -28,6 +28,7 @@ public class FilterExpressionHandler {
     private int ninstr;
     private JessExpressionAnalyzer jea;
     private HashMap<String,ArrayList<Integer>> allArchIDMap = new HashMap<>();          
+    private ArrayList<org.bson.Document> metadata;
 
             
     public FilterExpressionHandler(){
@@ -37,6 +38,7 @@ public class FilterExpressionHandler {
         ninstr = instr_list.length;
         dbq = new DBQueryBuilder();
         jea = new JessExpressionAnalyzer();
+        metadata = new ArrayList<>();
     }
     public FilterExpressionHandler(DBQueryBuilder dbq){
         instr_list = Params.instrument_list;
@@ -45,6 +47,7 @@ public class FilterExpressionHandler {
         ninstr = instr_list.length;
         this.dbq = dbq;
         jea = new JessExpressionAnalyzer();
+        metadata = new ArrayList<>();
     }
     
 
@@ -91,8 +94,10 @@ public class FilterExpressionHandler {
                 numbers = argSplit[2].split(",");
             }
 
-            ArrayList<org.bson.Document> docs = dbq.getMetadata();
-            for(org.bson.Document doc:docs){
+            if(this.metadata.isEmpty()){
+                this.metadata = dbq.getMetadata();
+            }
+            for(org.bson.Document doc:metadata){
                 int ArchID;
                 ArchID = doc.get("ArchID",Double.class).intValue();
                 String bitString = doc.get("bitString", String.class);
