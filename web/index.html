@@ -243,17 +243,17 @@ and open the template in the editor.
 									<div style="font-size:18px;font-weight: bold;margin-bottom:10px">
 										Range Selection
 									</div>
-				                    Cost range: <br/>
-				                    <input id="selectArchsWithinRange_minCost" class="select_within_range_text_box" type="text" value="0"/>&nbsp; ~&nbsp; <input id="selectArchsWithinRange_maxCost" class="select_within_range_text_box" type="text" value="inf"/>
-				                    <br/> Science Benefit range: <br/>
-				                    <input id="selectArchsWithinRange_minScience" class="select_within_range_text_box" type="text" value="0"/>&nbsp; ~&nbsp; <input id="selectArchsWithinRange_maxScience" class="select_within_range_text_box" type="text" value="1"/>
-				                    <br/>
-			                    	<button type="button" id="selectArchsWithinRangeButton" style="margin-top:10px;margin-bottom:3px;width:170px" >Select Designs</button>
+                                                                        Cost range: <br/>
+                                                                        <input id="selectArchsWithinRange_minCost" class="select_within_range_text_box" type="text" value="0"/>&nbsp; ~&nbsp; <input id="selectArchsWithinRange_maxCost" class="select_within_range_text_box" type="text" value="inf"/>
+                                                                        <br/> Science Benefit range: <br/>
+                                                                        <input id="selectArchsWithinRange_minScience" class="select_within_range_text_box" type="text" value="0"/>&nbsp; ~&nbsp; <input id="selectArchsWithinRange_maxScience" class="select_within_range_text_box" type="text" value="1"/>
+                                                                        <br/>
+                                                                        <button type="button" id="selectArchsWithinRangeButton" style="margin-top:10px;margin-bottom:3px;width:170px" >Select Designs</button>
 
 								</div>
-<!-- 			                    <button type="button"  id="hide_selection" disabled="True">Hide selections</button> -->
-<!-- 			                    <button type="button"  id="show_all_archs" disabled="True">Show all architectures</button> -->
-            				    <button type="button"  id="cancel_selection"  style="width:220px;height:35px;margin-top:20px">Cancel all selections</button>
+ 			                    <button type="button"  id="hide_selection" style="width:220px;height:30px;margin-top:15px">Hide selections</button> 
+ 			                    <button type="button"  id="show_all_archs" style="width:220px;height:30px;margin-top:7px">Show all architectures</button> 
+            				    <button type="button"  id="cancel_selection"  style="width:220px;height:30px;margin-top:7px">Cancel all selections</button>
 			                	
 			                
 			                </div>
@@ -342,10 +342,14 @@ and open the template in the editor.
             var support_threshold = 0.015;
             var confidence_threshold = 0.3;
             var lift_threshold = 1;
-            	
+
             var processed_features = [];   
+            var selected_features = [];
+            var removed_features = [];
                 
+            var userdef_features = [];
                 
+            var current_scope = null;    
                 
             // Filter option variables
             
@@ -357,11 +361,7 @@ and open the template in the editor.
                 {value:"numOfInstruments",text:"Number of instruments"},
                 {value:"subsetOfInstruments",text:"Num of instruments in a subset"}];
             
-            
-            var filter_options_dropdown_indentation = 10;
-            var filter_options_dropdown_current_level = 1;
-            
-            
+
             
             // Classification Tree variables
             var classificationTree_window;

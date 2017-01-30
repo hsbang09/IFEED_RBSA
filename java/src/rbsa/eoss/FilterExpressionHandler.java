@@ -106,10 +106,8 @@ public class FilterExpressionHandler {
                 }
             }
         }else{
-            
+           
             System.out.println(exp);
-
-            
         // Examples of feature expressions
         // Variable in String: "{collectionName:gt[0],slotName:String}"
         // Variable in String: "{collectionName:gt[0],slotName:'String'}"

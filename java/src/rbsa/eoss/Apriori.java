@@ -1,433 +1,323 @@
-///*
-// * To change this license header, choose License Headers in Project Properties.
-// * To change this template file, choose Tools | Templates
-// * and open the template in the editor.
-// */
-//package rbsa.eoss;
-//
-//
-//import java.util.*;
-//import rbsa.eoss.local.Params;
-///**
-// *
-// * @author Bang
-// */
-//public class Apriori {
-//    
-//    private int numItems;
-//    private int numTransactions;
-//    private ArrayList<boolean[]> transactions;
-//    private boolean[] classLabels;
-//    
-//    private double supp;
-//    private double conf;
-//    private double lift;
-//    
-//    private ArrayList<CAR> frontier;
-//    private ArrayList<DrivingFeature> CARs;
-//    
-//    private int selectedSize;
-//    
-//    
-//    String[] instrList = Params.instrument_list;
-//    String[] orbitList = Params.orbit_list;
-//    String[] newOrbitList = {"1000","2000","3000","4000","5000"};
-//    String[] newInstrList = {"A","B","C","D","E","F","G","H","I","J","K","L"};
-//    
-//    
-//    
-//    public Apriori(ArrayList<int[][]> selected_input, ArrayList<int[][]> pop_input, double supp, double conf, double lift){
-//
-//    	ArrayList<boolean[]> selected = intMatrix2BoolArray(selected_input);
-//    	ArrayList<boolean[]> pop = intMatrix2BoolArray(pop_input);
-//    	
-//    	
-//        transactions = pop;
-//        selectedSize = selected.size();
-//        classLabels = new boolean[pop.size()];
-//        numItems = transactions.get(0).length;
-//        numTransactions = transactions.size();
-//        
-////        System.out.println("numItems: " + numItems);
-////        System.out.println("numTrans: " + numTransactions);
-////        System.out.println("selected: " + selectedSize);
-//        int tmpcnt=0;
-//        
-//        for(int i=0;i<pop.size();i++){
-//            boolean[] thisTrans = pop.get(i);
-//            boolean foundMatch = false;
-//            
-//            for(boolean[] selected1:selected){
-//                boolean match = true;
-//                for(int j=0;j<thisTrans.length;j++){
-//                    if(thisTrans[j]!=selected1[j]){
-//                        match = false;
-//                        break;
-//                    }
-//                }
-//                if(match){
-//                    foundMatch = true;
-//                    break;
-//                }
-//            }
-//            classLabels[i] = foundMatch;
-//            if(foundMatch){tmpcnt++;}
-//        }
-//        
-////        System.out.println("matchingCount: " + tmpcnt);
-//        
-//        this.supp = supp;
-//        this.conf = conf;
-//        this.lift = lift;
-//        CARs = new ArrayList<>();
-//    }
-//    
-////    public Apriori(ArrayList<boolean[]> pop, ArrayList<boolean[]> selected, double supp, double conf, double lift){
-////
-////        transactions = pop;
-////        selectedSize = selected.size();
-////        classLabels = new boolean[pop.size()];
-////        numItems = transactions.get(0).length;
-////        numTransactions = transactions.size();
-////        
-////        for(int i=0;i<pop.size();i++){
-////            boolean[] thisTrans = pop.get(i);
-////            boolean foundMatch = false;
-////            
-////            for(boolean[] selected1:selected){
-////                boolean match = true;
-////                for(int j=0;j<thisTrans.length;j++){
-////                    if(thisTrans[j]!=selected1[j]){
-////                        match = false;
-////                        break;
-////                    }
-////                }
-////                if(match){
-////                    foundMatch = true;
-////                    break;
-////                }
-////            }
-////            classLabels[i] = foundMatch;
-////        }
-////        
-////        this.supp = supp;
-////        this.conf = conf;
-////        this.lift = lift;
-////        CARs = new ArrayList<>();
-////    }
-//    
-//    
-//    public void runApriori(){
-//        
-//        ArrayList<CAR> CAR_firstOrder = createCAROfSize1();
-//        frontier = CAR_firstOrder;
-//        
-//        
-//        while(frontier.size() > 0){
-//            ArrayList<CAR> tmp = new ArrayList<>();
-//            for(CAR thisCAR:frontier){
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package rbsa.eoss;
+
+
+import java.util.*;
+import org.jblas.DoubleMatrix;
+
+/**
+ *
+ * @author Bang
+ */
+public class Apriori {
+	
+    private double[] thresholds;
+    ArrayList<DrivingFeature> drivingFeatures;
+    DoubleMatrix DMMat;
+    DoubleMatrix DMLabel;
+    double [][] mat;
+    double[] labels;
+    int nrows;
+    int ncols;
+    ArrayList<Integer> skip;
+    
+    public Apriori(ArrayList<DrivingFeature> drivingFeatures, double[][] mat, double[] labels, double[] thresholds){
+    	this.drivingFeatures = drivingFeatures;
+    	this.nrows = mat.length;
+    	this.ncols = mat[0].length;   
+        this.mat = mat;
+        this.labels = labels;
+
+        this.DMMat = new DoubleMatrix(mat);
+        this.DMLabel = new DoubleMatrix(labels);
+        
+        // thresholds = {supp_threshold, lift_threshold, conf_threshold}
+    	this.thresholds = thresholds;
+        this.skip = new ArrayList<>();
+    }
+    
+    
+    public ArrayList<Feature> runApriori(int maxLength, boolean run_mRMR, int num_features_to_extract){        
+        
+            System.out.println("Size of the matrix: " + mat.length + " X " + mat[0].length);
+        
+        
+            // Define the initial set of features
+            ArrayList<Feature> S = new ArrayList<>();
+            
+            for(int i=0;i<mat[0].length;i++){
+                if(skip.contains(i)){continue;}
+                Feature newFeat = new Feature(i);
+                // Count frequency
+                double[] metrics = drivingFeatures.get(i).getMetrics();
+                newFeat.setMetrics(metrics);
+                S.add(newFeat);
+            }            
+
+            // Define frontier. Frontier is the set of features whose length is L and passes significant test
+            ArrayList<Feature> frontier = new ArrayList<>(); 
+
+            // Copy the initial set of features to the frontier
+            for (Feature s:S){
+                frontier.add(s);
+            }
+
+            int l = 2;
+            // While there are features still left to explore
+            while(frontier.size() > 0){
+                if(l-1==maxLength){
+                        break;
+                }
+                // Candidates to form the frontier with length L+1
+                ArrayList<Feature> candidates = apriori_gen_join(frontier);
+                candidates = apriori_gen_prune(candidates, frontier);
+                
+                System.out.println("Number of candidates (length "+l+"): " + candidates.size());
+                
+                frontier = new ArrayList<>();
+                for(Feature f:candidates){
+                    // Count frequency
+                    double[] metrics = computeMetrics(DMMat,f.getElements(),DMLabel);
+                    
+                    // Check if it passes minimum support threshold
+                    if(metrics[0] <= thresholds[0]){
+                            continue;
+                    }else{
+                        // Add all features whose support is above threshold, add to candidates
+                        frontier.add(f);
+                        if(metrics[2] > thresholds[2]){
+                                f.setMetrics(metrics);
+                                // If the metric is above the threshold, current feature is statistically significant
+                                S.add(f);
+                        }
+                    }                    
+                }
+                l=l+1;
+            }
+
+//            if(run_mRMR){
+//                DrivingFeaturesGenerator dfg = new DrivingFeaturesGenerator();
+//                S = dfg.sort(1, S);
+//                ArrayList<SetOfFeatures> S_reduced = new ArrayList<>();
 //                
-//                thisCAR = calculateFrequency(thisCAR);
-//                double thisSupp = getSupp(thisCAR);
-//                double thisConf = getConf(thisCAR);
-//                double thisConf2 = getConf2(thisCAR);
-//                double thisLift = getLift(thisCAR);
-//                if(thisSupp>=supp && thisConf>=conf && thisConf2>=conf && thisLift>=lift){
-//                    
-//                    int[] cond = thisCAR.getCondset();
-//                    String name = "";
-//                    for(int j=0;j<cond.length;j++){
-//                        String instrument = newInstrList[cond[j]%instrList.length];
-//                        String orbit = newOrbitList[cond[j]/instrList.length];
-//                        name = name + instrument + " in " + orbit + " ";
-//                    }
-//                    if(thisCAR.getClassLabel()==true){
-//                        name = name + "-> " + "good design";
-//                        double[] metrics = {thisSupp, thisLift, thisConf, thisConf2};
-//                        CARs.add(new DrivingFeature(name,"good",metrics));
-//                    } else{
-//                        name = name + "-> " + "bad design";
-//                        double[] metrics = {thisSupp, thisLift, thisConf, thisConf2};
-//                        CARs.add(new DrivingFeature(name,"bad",metrics));
-//                    }
-//                    tmp.add(thisCAR);
+//                if(num_features_to_extract==1){
+//                    S_reduced.add(S.get(0));
+//                    return S_reduced;
 //                }
-//            }
-//            System.out.println("length: " + frontier.get(0).getCondset().length + " number: "+ tmp.size() );
-//            
-//            if(tmp.size() > 0){
-//                frontier = createNewCandidatesFromPrevious(tmp);
-//            } else{
-//                frontier = new ArrayList<>();
-//            }
-//        }
-////        printCARs();
-//    }
-//    
-//    
-////    public ArrayList<String> printCARs(){
-////        ArrayList<String> outputStrings = new ArrayList<>();
-////        
-////        String[] instrList = Params.instrument_list;
-////        String[] orbitList = Params.orbit_list;
-////        String[] newOrbitList = {"1000","2000","3000","4000","5000"};
-////        String[] newInstrList = {"A","B","C","D","E","F","G","H","I","J","K","L"};
-////        
-////        for(int i=0;i<CARs.size();i++){
-////            
-////            
-////                    .text("Lift: " + thisDF.lift.toFixed(5) + 
-////                    " " + relabelDrivingFeatureName(thisDF.name) + " Supp: " + thisDF.supp.toFixed(5) + 
-////                    " Conf(feature->selection): " + thisDF.conf.toFixed(5) + 
-////                    " Conf(selection->feature): " + thisDF.conf2.toFixed(5));
-////            
-////            
-////            
-////            DrivingFeature thisCAR = CARs.get(i);
-////            outputStrings.add(thisCAR.getName() + " Supp:" + thisCAR.gets);
-////            
-////            
-////            System.out.println(out + "-> " + thisCAR.getClassLabel());
-////            outputStrings.add(out + "-> " + thisCAR.getClassLabel());
-////        }
-////        return outputStrings;
-////    }
-//    
-//    
-//    public ArrayList<DrivingFeature> getCARs(){
-//        return CARs;
-//    }
-//    
-//    
-//    private ArrayList<CAR> createNewCandidatesFromPrevious(ArrayList<CAR> prev){
-//        
-//        ArrayList<CAR> newCandidates = new ArrayList<>();
-//        
-//        for(int i=0;i<prev.size();i++){
-//            for(int j=i+1;j<prev.size();j++){
 //                
-//                int[] cond1 = prev.get(i).getCondset();
-//                int[] cond2 = prev.get(j).getCondset();
-//                boolean cond1cl = classLabels[i];
-//                int currentSize = cond1.length;
-//                
-//                int[] newCond = new int[currentSize+1];
-//                for(int s=0;s<newCond.length-1;s++){
-//                    newCond[s] = cond1[s];
-//                }
-//
-//                for(int s2=0;s2<cond2.length;s2++){   // check cond2[s2] is present in cond1
-//                    boolean found = false;
-//                    for(int s1=0;s1<cond1.length;s1++){
-//                        if(cond1[s1]==cond2[s2]){
-//                            found=true;
-//                            break;
-//                        }
-//                    }
-//                    if(!found){ // not found
-//                        newCond[newCond.length-1] = cond2[s2];  // create new cond with length k+1
-//                        Arrays.sort(newCond);
-//                        
-//                        boolean allSubsetsPresent = true; 
-//                        for(int k=0;k<newCond.length;k++){
-//                            
-//                            int[] tmpCond = combination(newCond,k);
-//                            CAR tmpCAR = new CAR(tmpCond,cond1cl);
-//                            
-//                            if(!condPresentInList(tmpCAR,prev)){ // must be present
-//                                allSubsetsPresent = false;
-//                                break;
-//                            }
-//                        }
-//                        if(allSubsetsPresent && !condPresentInList(new CAR(newCond,cond1cl),newCandidates)){
-//                        	newCandidates.add(new CAR(newCond,cond1cl));
-//                        }
+//                if(S.size() < DrivingFeaturesParams.max_number_of_features_before_mRMR){
+//                    S_reduced = S;
+//                }else{
+//                    for(int i=0;i<DrivingFeaturesParams.max_number_of_features_before_mRMR;i++){
+//                        S_reduced.add(S.get(i));
 //                    }
 //                }
-//            }
-//        }
-//        return newCandidates;
-//    }
-//    
-//    private boolean condPresentInList(CAR thisCAR, ArrayList<CAR> list){
-//        
-//        for(CAR tmpCAR:list){
-//            int[] cond1 = thisCAR.getCondset();
-//            int[] cond2 = tmpCAR.getCondset();
-//            boolean cond1cl = thisCAR.getClassLabel();
-//            boolean cond2cl = tmpCAR.getClassLabel();
-//            if(compareConds(cond1,cond2) && cond1cl==cond2cl){
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 //
-//    private boolean compareConds(int[] cond1, int[] cond2){
-//        boolean match = true;
-//        for(int i=0;i<cond1.length;i++){
-//            if(cond1[i]!=cond2[i]){
-//                match = false;
-//                break;
+//                MRMR mRMR = new MRMR();
+//                S = mRMR.minRedundancyMaxRelevance(dataFeatureMat, S_reduced, num_features_to_extract);
 //            }
-//        }
-//        return match;
-//    }
-//
-//    private int[] combination(int[] X, int index){
-//        int[] out = new int[X.length-1];
-//        int cnt=0;
-//        for(int i=0;i<X.length-1;i++){
-//            if(i!=index){
-//                out[cnt] = X[i];
-//                cnt++;
-//            }
-//        }
-//        return out;
-//    }    
-//    
-//
-//    
-//    private double getSupp(CAR thisCAR){
-////        thisCAR = calculateFrequency(thisCAR);
-//        double carsupp = (double) (((double)thisCAR.getRulecnt())/((double)numTransactions));
-//        return carsupp;
-//    }
-//    
-//    private double getConf(CAR thisCAR){
-////        thisCAR = calculateFrequency(thisCAR);
-//        double carconf =  (double) (((double)thisCAR.getRulecnt())/((double)thisCAR.getCondcnt()));
-//        return carconf;
-//    }
-//    private double getConf2(CAR thisCAR){
-////        thisCAR = calculateFrequency(thisCAR);
-//        double carconf2 =  (double) (((double)thisCAR.getRulecnt())/((double) selectedSize));
-//        return carconf2;
-//    }
-//    
-//    private double getLift(CAR thisCAR){
-////        thisCAR = calculateFrequency(thisCAR);
-//        double carconf =  (double) (((double)thisCAR.getRulecnt())/((double)thisCAR.getCondcnt()));
-//        return (double) carconf/selectedSize;
-//    }
-//    
-//    
-//    
-//    private ArrayList<CAR> createCAROfSize1(){
-//        ArrayList<CAR> candidates = new ArrayList<>();
-//        for(int i=0;i<numItems;i++){
-//            int[] tmp = new int[1];
-//            tmp[0] = i;
-//            CAR thisCAR1 = new CAR(tmp,true);
-//            CAR thisCAR2 = new CAR(tmp,false);
-//
-//            candidates.add(thisCAR1);
-//            candidates.add(thisCAR2);
-//        }
-//        return candidates;
-//    }
-//    
-//    public CAR calculateFrequency(CAR inputCAR){
-//        CAR thisCAR = inputCAR;
-//        thisCAR.setCntZero();
-//        
-////        if(inputCAR.getCondcnt()!=0 || inputCAR.getRulecnt()!=0){
-////            return inputCAR;
-////        }
-//        
-//        for(int i=0;i<numTransactions;i++){
-//            boolean match = true;
-//            int[] cond = thisCAR.getCondset();
-//            boolean[] thisTrans = transactions.get(i);
-//            
-//            for(int j=0;j<cond.length;j++){
-//                if(!thisTrans[cond[j]]){
-//                    match = false;
-//                    break;
-//                }
-//            }
-//            
-//            if(match){
-//                thisCAR.condcntUp();
-//                if(classLabels[i]==thisCAR.getClassLabel()){
-//                    thisCAR.rulecntUp();
-//                }
-//            }
-//        }
-//        return thisCAR;
-//    }
-//   
-//    public class CAR{
-//        
-//        private int[] condset;
-//        private boolean classLabel;
-//        
-//        private int condcnt;
-//        private int rulecnt;
-//        
-//        public CAR(int[] condset){
-//            this.condset=condset;
-//            condcnt=0;
-//            rulecnt=0;
-//        }
-//        public CAR(int[] condset, boolean classLabel){
-//            this.condset=condset;
-//            this.classLabel=classLabel;
-//            condcnt=0;
-//            rulecnt=0;
-//        }
-//        public void setCntZero(){
-//        	condcnt=0;
-//        	rulecnt=0;
-//        }
-//        public void condcntUp(){
-//            condcnt++;
-//        }
-//        public void rulecntUp(){
-//            rulecnt++;
-//        }
-//        public int getCondcnt(){
-//            return condcnt;
-//        }
-//        public int getRulecnt(){
-//            return rulecnt;
-//        }
-//        public int[] getCondset(){
-//            return condset;
-//        }
-//        public boolean getClassLabel(){
-//            return classLabel;
-//        }
-//        
-//    }
-//    
-//    
-//    public ArrayList<boolean[]> intMatrix2BoolArray(ArrayList<int[][]> input){
-//    	
-//    	ArrayList<boolean[]> boolArray = new ArrayList<>();
-//    	int len = input.get(0).length * input.get(0)[0].length;
-//    	
-//    	for(int i=0;i<input.size();i++){
-//    		
-//    		boolean[] tmpArray = new boolean[len];
-//    		int cnt=0;
-//    		for(int j=0;j<input.get(i).length;j++){
-//    			for(int k=0;k<input.get(i)[j].length;k++){
-//    				if(input.get(i)[j][k]==1){
-//    					tmpArray[cnt]=true;
-//    				}else{
-//    					tmpArray[cnt]=false;
-//    				}
-//    				cnt++;
-//    			}
-//    		}
-//    		
-//    		
-//    		boolArray.add(tmpArray);
-//    	}
-//
-//    	return boolArray;
-//    }
-//   
-//    
-//}
+            return S;
+    }
+
+    
+    private ArrayList<Feature> apriori_gen_join(ArrayList<Feature> front){
+        int length = front.get(0).getElements().size();        
+        ArrayList<Feature> candidates = new ArrayList<>();
+        for(int i=0;i<front.size();i++){
+            Feature f1 = front.get(i);
+            
+            for(int j=i+1;j<front.size();j++){
+                Feature f2 = front.get(j);
+                boolean match = true;
+                
+                ArrayList<Integer> elm1 = new ArrayList<>();
+                for(int temp: f1.getElements()) {
+                    elm1.add(temp);
+                }        
+                ArrayList<Integer> elm2 = new ArrayList<>();
+                for(int temp: f2.getElements()) {
+                    elm2.add(temp);
+                }                       
+
+                for(int k=0;k<length-1;k++){
+                    if(!Objects.equals(elm1.get(k), elm2.get(k))){
+                        match = false;
+                        break;
+                    }
+                }
+                if(match){
+                    elm1.add(elm2.get(length-1));
+                    candidates.add(new Feature(elm1));
+                }
+            }
+        }        
+        
+        return candidates;
+    }
+    
+    
+    private ArrayList<Feature> apriori_gen_prune(ArrayList<Feature> cand, ArrayList<Feature> prev){
+        // cand is a set of Features of length L and prev is a set of Features of length L-1
+        ArrayList<Feature> candidates = new ArrayList<>();
+                
+        for(Feature f:cand){
+            ArrayList<Integer> list = f.getElements();
+            
+            Set<Integer> subset = new HashSet<Integer>(list); 
+            int length = subset.size();
+            boolean included = true;
+                        
+            for(int i=0;i<length;i++){
+                // All subsets of length L-1 should be included in prev
+                int elm = list.get(i);
+                // Create a subset of length L-1
+                subset.remove(elm);
+                                
+                boolean match_found = false;
+                // Test if the subset is included in prev
+                for(Feature prevF:prev){
+                    Set<Integer> prevset = new HashSet<Integer>(prevF.getElements());  
+                    if(same(subset,prevset)){
+                        match_found=true;
+                        break;
+                    }
+                }
+                subset.add(elm);
+                if(!match_found){
+                    included = false;
+                    break;
+                }
+            }
+            
+            if(included){
+                // If all subsets of length L-1 of current feature are included in prev, add to the candidates
+                candidates.add(f);
+            }            
+        }
+        return candidates;
+    }
+    
+    
+    
+
+
+    public boolean same(Set<?> set1, Set<?> set2){
+        if(set1 == null || set2 ==null){
+            return false;
+        }
+        if(set1.size()!=set2.size()){
+            return false;
+        }
+        return set1.containsAll(set2);
+    }
+	
+    public boolean contains(int[] arr, int i){
+            for(int a:arr){
+                    if(a==i){
+                            return true; 
+                    }
+            }
+            return false;
+    }
+
+    public void setSkip(ArrayList<Integer> list){
+        this.skip = list;
+    }
+
+    
+    
+    public double[] computeMetrics(DoubleMatrix dataMat, ArrayList<Integer> indexArray, DoubleMatrix label){
+        
+        int numFeat = indexArray.size();
+        int[] indices = new int[numFeat];
+        for(int i=0;i<numFeat;i++){
+            indices[i]=indexArray.get(i);
+        }
+        
+        DoubleMatrix cond = DoubleMatrix.zeros(ncols,1);
+        cond.put(indices,0,  1.0);
+
+        double cnt_all = nrows;
+        double cnt_F = 0;
+        double cnt_S = 0;
+        double cnt_SF = 0;
+
+        DoubleMatrix countMat = dataMat.mmul(cond);
+        countMat = countMat.eq(numFeat);
+        cnt_SF = label.dot(countMat);
+        cnt_S = label.norm1();
+        cnt_F = countMat.norm1();
+        double[] metrics = new double[4];
+        double support = cnt_SF/cnt_all;
+        double lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
+        double conf_given_F = (cnt_SF)/(cnt_F);   // confidence (feature -> selection)
+        double conf_given_S = (cnt_SF)/(cnt_S);   // confidence (selection -> feature)
+
+        metrics[0] = support;
+        metrics[1] = lift;
+        metrics[2] = conf_given_F;
+        metrics[3] = conf_given_S;
+        return metrics;
+    }
+
+
+    
+    public ArrayList<boolean[]> intMatrix2BoolArray(ArrayList<int[][]> input){
+    	
+    	ArrayList<boolean[]> boolArray = new ArrayList<>();
+    	int len = input.get(0).length * input.get(0)[0].length;
+    	
+    	for(int i=0;i<input.size();i++){
+    		
+    		boolean[] tmpArray = new boolean[len];
+    		int cnt=0;
+    		for(int j=0;j<input.get(i).length;j++){
+    			for(int k=0;k<input.get(i)[j].length;k++){
+    				if(input.get(i)[j][k]==1){
+    					tmpArray[cnt]=true;
+    				}else{
+    					tmpArray[cnt]=false;
+    				}
+    				cnt++;
+    			}
+    		}
+    		
+    		
+    		boolArray.add(tmpArray);
+    	}
+
+    	return boolArray;
+    }
+   
+    
+    
+    
+    
+    class Feature{
+        private ArrayList<Integer> elements;
+        private double[] metrics;
+        
+        
+        public Feature(ArrayList<Integer> elem){
+            this.elements = elem;
+        }
+        public Feature(int i){
+            this.elements = new ArrayList<>();
+            this.elements.add(i);
+        }
+        public ArrayList<Integer> getElements(){
+            return this.elements;
+        }
+        public void setMetrics(double[] metrics){
+            this.metrics = metrics;
+        }
+        public double[] getMetrics(){
+            return this.metrics;
+        }
+    }
+    
+}

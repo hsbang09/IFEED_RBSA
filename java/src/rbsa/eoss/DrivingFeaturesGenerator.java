@@ -40,6 +40,7 @@ public class DrivingFeaturesGenerator {
     private DBQueryBuilder dbquery;
     private ArrayList<Integer> behavioral;
     private ArrayList<Integer> non_behavioral;
+    private ArrayList<Integer> population;
     
     private double supp_threshold;
     private double conf_threshold;
@@ -50,8 +51,8 @@ public class DrivingFeaturesGenerator {
     private double ninstr;
     private double norb;
     private ArrayList<DrivingFeature> drivingFeatures;
-    private ArrayList<DrivingFeature> userDef;
-    private int[][] dataFeatureMat;
+    private double[][] drivingFeaturesMatrix;
+    private double[] labelArray;
 
     private String[] exclude_general_array = {"ArchID"}; 
     // _id, factName, factID, module, factHistory are filtered in DBQueryBuilder.getSlotNames(); 
@@ -65,6 +66,9 @@ public class DrivingFeaturesGenerator {
     private ArrayList<String> exclude_aggregation;
     private ArrayList<String> exclude_science_mission;
     private ArrayList<String> exclude_science_measurement;
+    
+    private ArrayList<String> userDefFeatures;
+    private ArrayList<String> removedFeatures;
     
     public DrivingFeaturesGenerator(){
         this.dbquery = new DBQueryBuilder();
@@ -84,6 +88,13 @@ public class DrivingFeaturesGenerator {
         this.lift_threshold=lift;
         this.behavioral = behavioral;
         this.non_behavioral = non_behavioral;
+        this.population = new ArrayList<>();
+        for(int i:behavioral){
+            population.add(i);
+        }
+        for(int i:non_behavioral){
+            population.add(i);
+        }        
         drivingFeatures = new ArrayList<>();
         feh = new FilterExpressionHandler(this.dbquery);
         
@@ -94,13 +105,23 @@ public class DrivingFeaturesGenerator {
         exclude_cost = new ArrayList<String>(Arrays.asList(exclude_cost_array)); 
         exclude_science_mission = new ArrayList<String>(Arrays.asList(exclude_science_mission_array));
         exclude_science_measurement = new ArrayList<String>(Arrays.asList(exclude_science_measurement_array));
+        
+        userDefFeatures = new ArrayList<>();
+        removedFeatures = new ArrayList<>();
+                
+        
     }
     
  
 
     public ArrayList<DrivingFeature> getDrivingFeatures (){
         
-        ArrayList<String> candidate_features = new ArrayList<>();
+        // Get all archIDs
+        ArrayList<Integer> allArchIDList = dbquery.getAllArchIDs(scope);          
+        // Get unique set of IDs
+                
+        ArrayList<String> candidate_features = new ArrayList<>();        
+        ArrayList<int[]> satList = new ArrayList<>();
         
         if(scope.equalsIgnoreCase("design_input")){
             // Input variables
@@ -167,8 +188,11 @@ public class DrivingFeaturesGenerator {
                 double[] metrics = this.computeMetrics(matchedArchIDs);
                 if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
                     drivingFeatures.add(new DrivingFeature(name,feature,metrics,true));
+                    int[] satArray = satisfactionArray(matchedArchIDs,population); 
+                    satList.add(satArray);
                 }
             }            
+            
         }else{
             // Facts in database
             
@@ -192,8 +216,6 @@ public class DrivingFeaturesGenerator {
             // Double: "{collectionName:gt[0],slotName:[,maxVal]}"
             // Conditions put on multiple slots: "{collectionName:gt[0],slotName:[minVal;],slotName:String}"
                         
-            ArrayList<Integer> allArchIDList = dbquery.getAllArchIDs(scope);          
-            
             
             if(scope.contains("AGGREGATION")){
                 ArrayList<String> slots = new ArrayList<>();
@@ -358,16 +380,16 @@ public class DrivingFeaturesGenerator {
                 // FactCounter counts the number of Facts corresponding to each architecture
                 HashMap<Integer,Integer> FactCounter = new HashMap<>();
                 
-                //Get unique set of IDs
-                Set<Integer> allArchIDSet = new HashSet<>(allArchIDList);            
-
-                for(int id:allArchIDSet){
+                
+                for(int id:population){
                     FactCounter.put(id,0);
                 }
                 for(int id:matchedArchIDs){
-                    // Keys are unique architecture ID's
-                    int cnt = FactCounter.get(id);
-                    FactCounter.put(id, cnt+1);
+                    if(population.contains(id)){
+                        // Keys are unique architecture ID's
+                        int cnt = FactCounter.get(id);
+                        FactCounter.put(id, cnt+1);
+                    }
                 }   
 
                 // Generate conditions on the number of instances of jess Fact
@@ -387,29 +409,117 @@ public class DrivingFeaturesGenerator {
                  
                 // Generate driving features for each condition
                 for(String cond:numOfInstance_conditions){
-                    String inequalitySign = cond.split("\\[")[0];
-                    int argument = Integer.parseInt(cond.substring(0,cond.length()-1).split("\\[")[1]);
-                    
-                    double[] metrics;
-                    if(inequalitySign.equalsIgnoreCase("all")){
-                        metrics = computeMetrics(FactCounter, allArchIDList);
-                    }else{
-                        metrics = computeMetrics(FactCounter,inequalitySign,argument);
-                    }
                     // Examples of feature expressions
                     // Variable in String: "{collectionName:gt[0],slotName:String}"
                     // Variable in Double: "{collectionName:gt[0],slotName:[minVal,maxVal]}"
                     // Variable in Double: "{collectionName:gt[0],slotName:[,maxVal]}"
                     String feature_expression = "{"+scope+":"+cond+","+slot_conditions+"}";
-                    String feature_name = scope + ":" + slotNames.get(0);
+                    String feature_name = scope + ":" + slotNames.get(0);                    
+                    
+                    String inequalitySign = cond.split("\\[")[0];
+                    int argument;
+                    double[] metrics;
+                    if(inequalitySign.equalsIgnoreCase("all")){
+                        metrics = computeMetrics(FactCounter, allArchIDList);
+                    }else{
+                        argument = Integer.parseInt(cond.substring(0,cond.length()-1).split("\\[")[1]);
+                        metrics = computeMetrics(FactCounter,inequalitySign,argument);
+                    }
+
                     if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
                         drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
+                        int[] satArray = satisfactionArray(matchedArchIDs,population); 
+                        satList.add(satArray);
                     }                       
                 }
             }            
         }
+        
+        // Test the user-defined features
+        if(!this.userDefFeatures.isEmpty()){
+            for(String exp:this.userDefFeatures){
+                if(exp.isEmpty()){
+                    continue;
+                }
+                ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(exp, new ArrayList<Integer>(), "||");
+                double[] metrics = this.computeMetrics(matchedArchIDs);
+                if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
+                    drivingFeatures.add(new DrivingFeature(exp,exp,metrics,true));
+                    int[] satArray = satisfactionArray(matchedArchIDs,population); 
+                    satList.add(satArray);
+                }             
+            }
+        }
+
+        // Get feature satisfaction matrix
+        this.drivingFeaturesMatrix = new double[population.size()][drivingFeatures.size()];
+        for(int i=0;i<population.size();i++){
+            for(int j=0;j<drivingFeatures.size();j++){
+                this.drivingFeaturesMatrix[i][j] = (double) satList.get(j)[i];
+            }
+        }       
+        
         return this.drivingFeatures;
     }
+    
+    
+    
+    public ArrayList<DrivingFeature> getHigherOrderDrivingFeautures(double supp, double conf, double lift){
+        
+        ArrayList<DrivingFeature> newDrivingFeatures = new ArrayList<>();
+        ArrayList<Integer> removedFeatureIndices = new ArrayList<>();
+        
+        for(String rf:this.removedFeatures){
+            for(int i=0;i<this.drivingFeatures.size();i++){
+                if(this.drivingFeatures.get(i).getExpression().equalsIgnoreCase(rf)){
+                    removedFeatureIndices.add(i);
+                    break;
+                }
+            }
+        }
+
+        
+        this.setThresholds(supp, conf, lift);
+        double[] labels = new double[population.size()];
+        for(int i=0;i<population.size();i++){
+            int id = population.get(i);
+            if(behavioral.contains(id)){
+                labels[i] = 1.0;
+            }else{
+                labels[i] = 0.0;
+            }
+        }
+        double[] thresholds = {this.supp_threshold, this.lift_threshold, this.conf_threshold};
+        Apriori ap = new Apriori(drivingFeatures, this.drivingFeaturesMatrix, labels, thresholds);
+        ap.setSkip(removedFeatureIndices);
+        ArrayList<Apriori.Feature> features = ap.runApriori(2,false,100);
+        for(Apriori.Feature feat:features){
+            String expression="";
+            String name="";
+            ArrayList<Integer> featureIndices = feat.getElements();
+            boolean first = true;
+            for(int index:featureIndices){
+                if(first){
+                    first = false;
+                }
+                else{
+                    expression = expression + "&&";
+                    name = name + "&&";
+                }
+                DrivingFeature thisDF = this.drivingFeatures.get(index);
+                expression = expression + thisDF.getExpression();
+                name = name + thisDF.getName();
+            }
+            double[] metrics = feat.getMetrics();
+            DrivingFeature df = new DrivingFeature(name,expression, metrics, false);
+            newDrivingFeatures.add(df);
+        }
+        
+        return newDrivingFeatures;
+    }
+    
+    
+    
     
     
     
@@ -435,6 +545,22 @@ public class DrivingFeaturesGenerator {
         return thresholds;
     }
        
+    
+    
+    private int[] satisfactionArray(ArrayList<Integer> matchedArchIDs, ArrayList<Integer> allArchIDs){
+        int[] satArray = new int[allArchIDs.size()];
+        for(int i=0;i<allArchIDs.size();i++){
+            int id = allArchIDs.get(i);
+            if(matchedArchIDs.contains(id)){
+                satArray[i]=1;
+            }else{
+                satArray[i]=0;
+            }
+        }
+        return satArray;
+    }
+    
+    
     private double[] computeMetrics(HashMap<Integer,Integer> FactCounter, ArrayList<Integer> allArchIDList){
         
     	double cnt_all= (double) non_behavioral.size() + behavioral.size();
@@ -443,11 +569,11 @@ public class DrivingFeaturesGenerator {
         double cnt_SF=0.0;
         
         boolean pass;
-        for(int uniqueArchID:FactCounter.keySet()){
-                pass=FactCounter.get(uniqueArchID)==Collections.frequency(allArchIDList,uniqueArchID);
+        for(int id:this.population){
+                pass=FactCounter.get(id)==Collections.frequency(allArchIDList,id);
             if(pass){
                 cnt_F++;
-                if(behavioral.contains(uniqueArchID)){cnt_SF++;}
+                if(behavioral.contains(id)){cnt_SF++;}
             }
         }        
         double cnt_NS = cnt_all-cnt_S;
@@ -475,7 +601,6 @@ public class DrivingFeaturesGenerator {
     	return metrics;
     }        
   
-  
     private double[] computeMetrics(HashMap<Integer,Integer> FactCounter, String inequalitySign, int argument){
         
     	double cnt_all= (double) non_behavioral.size() + behavioral.size();
@@ -484,11 +609,11 @@ public class DrivingFeaturesGenerator {
         double cnt_SF=0.0;
         
         boolean pass;
-        for(int uniqueArchID:FactCounter.keySet()){
-            pass = feh.compare_number(FactCounter.get(uniqueArchID),inequalitySign,argument);
+        for(int id:this.population){
+            pass = feh.compare_number(FactCounter.get(id),inequalitySign,argument);
             if(pass){
                 cnt_F++;
-                if(behavioral.contains(uniqueArchID)){cnt_SF++;}
+                if(behavioral.contains(id)){cnt_SF++;}
             }
         }        
         double cnt_NS = cnt_all-cnt_S;
@@ -518,7 +643,7 @@ public class DrivingFeaturesGenerator {
 
     private double[] computeMetrics(ArrayList<Integer> matchedArchIDs){
         
-        if (matchedArchIDs.size()==0){
+        if (matchedArchIDs.isEmpty()){
             double[] metrics = {0,0,0,0};
             return metrics;
         }
@@ -564,13 +689,6 @@ public class DrivingFeaturesGenerator {
     
 
 
-    
-//        getDataFeatureMat();
-//        System.out.println("----------mRMR-----------");
-//        ArrayList<String> mRMR = minRedundancyMaxRelevance(40);
-//        for(String mrmr:mRMR){
-//            System.out.println(drivingFeatures.get(Integer.parseInt(mrmr)).getName());
-//        }
 
     
     
@@ -583,199 +701,158 @@ public class DrivingFeaturesGenerator {
     }
 
     
+    public void setRemovedFeatures(String[] removed){
+        removedFeatures = new ArrayList<>();
+        for(String r:removed){
+            if(!r.isEmpty()){
+                removedFeatures.add(r);
+            }
+        }
+    }
+    public void setUserDefFeatures(String[] userdef){
+        userDefFeatures = new ArrayList<>();
+        for(String s:userdef){
+            if(!s.isEmpty()){
+                userDefFeatures.add(s);
+            }
+        }
+    }
     
-
-//    public int[][] getDataFeatureMat(){
+    public void setThresholds(double supp, double conf, double lift){
+        this.supp_threshold=supp;
+        this.conf_threshold=conf;
+        this.lift_threshold=lift;
+    }
+    
+    
+    
+    
+//    public ArrayList<String> minRedundancyMaxRelevance(int numSelectedFeatures){
 //        
-//        int numData = behavioral.size() + non_behavioral.size();
-//        int numFeature = drivingFeatures.size() + 1; // add class label as a last feature
-//        int[][] dataMat = new int[numData][numFeature];
+//        int[][] m = dataFeatureMat;
+//        int numFeatures = m[0].length;
+//        int numData = m.length;
+//        ArrayList<String> selected = new ArrayList<>();
 //        
-//        for(int i=0;i<numData;i++){
-//        	int[][] d;
-//        	if(i<behavioral.size()){
-//        		d = behavioral.get(i);
-//        	}else{
-//        		d = non_behavioral.get(i-behavioral.size());
-//        	}
-//            Scheme s = new Scheme();
+//        while(selected.size() < numSelectedFeatures){
+//            double phi = -10000;
+//            int save=0;
+//            for(int i=0;i<numFeatures-1;i++){
+//                if(selected.contains(""+i)){
+//                    continue;
+//                }
 //
-////            presetFilter(String filterName, int[][] data, ArrayList<String> params
-//            for(int j=0;j<numFeature-1;j++){
-//                DrivingFeature f = drivingFeatures.get(j);
-//                String name = f.getName();
-//                String type = f.getType();
+//                double D = getMutualInformation(i,numFeatures-1);
+//                double R = 0;
+//
+//                for (String selected1 : selected) {
+//                    R = R + getMutualInformation(i, Integer.parseInt(selected1));
+//                }
+//                if(!selected.isEmpty()){
+//                   R = (double) R/selected.size();
+//                }
 //                
-//                if(f.isPreset()){
-//                    String[] param_ = f.getParam();
-//                    ArrayList<String> param = new ArrayList<>();
-//                    param.addAll(Arrays.asList(param_));
-//                    if(s.presetFilter(type, d, param)){
-//                        dataMat[i][j]=1;
-//                    } else{
-//                        dataMat[i][j]=0;
-//                    }
-//                } else{
-//                    if(s.userDefFilter_eval(type, d)){
-//                        dataMat[i][j]=1;
-//                    } else{
-//                        dataMat[i][j]=0;
-//                    }
+////                System.out.println(D-R);
+//                
+//                if(D-R > phi){
+//                    phi = D-R;
+//                    save = i;
 //                }
 //            }
-//            
-//            boolean classLabel = false;
-//            for (int[][] compData : behavioral) {
-//                boolean match = true;
-//                for(int k=0;k<d.length;k++){
-//                    for(int l=0;l<d[0].length;l++){
-//                        if(d[k][l]!=compData[k][l]){
-//                            match = false;
-//                            break;
-//                        }
-//                    }
-//                    if(match==false) break;
+////            System.out.println(save);
+//            selected.add(""+save);
+//        }
+//        return selected;
+//    }  
+//    public double getMutualInformation(int feature1, int feature2){
+//        
+//        int[][] m = dataFeatureMat;
+//        int numFeatures = m[0].length;
+//        int numData = m.length;
+//        double I;
+//        
+//        int x1=0,x2=0;
+//        int x1x2=0,nx1x2=0,x1nx2=0,nx1nx2=0;      
+//
+//        for(int k=0;k<numData;k++){
+//            if(m[k][feature1]==1){ // x1==1
+//                x1++;
+//                if(m[k][feature2]==1){ // x2==1
+//                    x2++;
+//                    x1x2++;
+//                } else{ // x2!=1
+//                    x1nx2++;
 //                }
-//                if(match==true){
-//                    classLabel = true;
-//                    break;
+//            } else{ // x1!=1
+//                if(m[k][feature2]==1){ // x2==1 
+//                    x2++;
+//                    nx1x2++;
+//                }else{ // x2!=1
+//                    nx1nx2++;
 //                }
-//            }
-//            if(classLabel==true){
-//                dataMat[i][numFeature-1]=1;
-//            } else{
-//                dataMat[i][numFeature-1]=0;
 //            }
 //        }
-//        dataFeatureMat = dataMat;
-//        return dataMat;
+//        double p_x1 =(double) x1/numData;
+//        double p_nx1 = (double) 1-p_x1;
+//        double p_x2 = (double) x2/numData;
+//        double p_nx2 = (double) 1-p_x2;
+//        double p_x1x2 = (double) x1x2/numData;
+//        double p_nx1x2 = (double) nx1x2/numData;
+//        double p_x1nx2 = (double) x1nx2/numData;
+//        double p_nx1nx2 = (double) nx1nx2/numData;
+//        
+//        if(p_x1==0){p_x1 = 0.0001;}
+//        if(p_nx1==0){p_nx1=0.0001;}
+//        if(p_x2==0){p_x2=0.0001;}
+//        if(p_nx2==0){p_nx2=0.0001;}
+//        if(p_x1x2==0){p_x1x2=0.0001;}
+//        if(p_nx1x2==0){p_nx1x2=0.0001;}
+//        if(p_x1nx2==0){p_x1nx2=0.0001;}
+//        if(p_nx1nx2==0){p_nx1nx2=0.0001;}
+//        
+//        double i1 = p_x1x2*Math.log(p_x1x2/(p_x1*p_x2));
+//        double i2 = p_x1nx2*Math.log(p_x1nx2/(p_x1*p_nx2));
+//        double i3 = p_nx1x2*Math.log(p_nx1x2/(p_nx1*p_x2));
+//        double i4 = p_nx1nx2*Math.log(p_nx1nx2/(p_nx1*p_nx2));
+//
+//        I = i1 + i2 + i3 + i4;
+//        return I;
 //    }
-    public ArrayList<String> minRedundancyMaxRelevance(int numSelectedFeatures){
-        
-        int[][] m = dataFeatureMat;
-        int numFeatures = m[0].length;
-        int numData = m.length;
-        ArrayList<String> selected = new ArrayList<>();
-        
-        while(selected.size() < numSelectedFeatures){
-            double phi = -10000;
-            int save=0;
-            for(int i=0;i<numFeatures-1;i++){
-                if(selected.contains(""+i)){
-                    continue;
-                }
-
-                double D = getMutualInformation(i,numFeatures-1);
-                double R = 0;
-
-                for (String selected1 : selected) {
-                    R = R + getMutualInformation(i, Integer.parseInt(selected1));
-                }
-                if(!selected.isEmpty()){
-                   R = (double) R/selected.size();
-                }
-                
-//                System.out.println(D-R);
-                
-                if(D-R > phi){
-                    phi = D-R;
-                    save = i;
-                }
-            }
-//            System.out.println(save);
-            selected.add(""+save);
-        }
-        return selected;
-    }  
-    public double getMutualInformation(int feature1, int feature2){
-        
-        int[][] m = dataFeatureMat;
-        int numFeatures = m[0].length;
-        int numData = m.length;
-        double I;
-        
-        int x1=0,x2=0;
-        int x1x2=0,nx1x2=0,x1nx2=0,nx1nx2=0;      
-
-        for(int k=0;k<numData;k++){
-            if(m[k][feature1]==1){ // x1==1
-                x1++;
-                if(m[k][feature2]==1){ // x2==1
-                    x2++;
-                    x1x2++;
-                } else{ // x2!=1
-                    x1nx2++;
-                }
-            } else{ // x1!=1
-                if(m[k][feature2]==1){ // x2==1 
-                    x2++;
-                    nx1x2++;
-                }else{ // x2!=1
-                    nx1nx2++;
-                }
-            }
-        }
-        double p_x1 =(double) x1/numData;
-        double p_nx1 = (double) 1-p_x1;
-        double p_x2 = (double) x2/numData;
-        double p_nx2 = (double) 1-p_x2;
-        double p_x1x2 = (double) x1x2/numData;
-        double p_nx1x2 = (double) nx1x2/numData;
-        double p_x1nx2 = (double) x1nx2/numData;
-        double p_nx1nx2 = (double) nx1nx2/numData;
-        
-        if(p_x1==0){p_x1 = 0.0001;}
-        if(p_nx1==0){p_nx1=0.0001;}
-        if(p_x2==0){p_x2=0.0001;}
-        if(p_nx2==0){p_nx2=0.0001;}
-        if(p_x1x2==0){p_x1x2=0.0001;}
-        if(p_nx1x2==0){p_nx1x2=0.0001;}
-        if(p_x1nx2==0){p_x1nx2=0.0001;}
-        if(p_nx1nx2==0){p_nx1nx2=0.0001;}
-        
-        double i1 = p_x1x2*Math.log(p_x1x2/(p_x1*p_x2));
-        double i2 = p_x1nx2*Math.log(p_x1nx2/(p_x1*p_nx2));
-        double i3 = p_nx1x2*Math.log(p_nx1x2/(p_nx1*p_x2));
-        double i4 = p_nx1nx2*Math.log(p_nx1nx2/(p_nx1*p_nx2));
-
-        I = i1 + i2 + i3 + i4;
-        return I;
-    }
     
     
-    public FastVector setDataFormat(){
-        
-            FastVector bool = new FastVector();
-            bool.addElement("false");
-            bool.addElement("true");
-            FastVector attributes = new FastVector();
-
-            for(DrivingFeature df:drivingFeatures){
-                String name = df.getName();
-                attributes.addElement(new Attribute(name,bool));
-            }
-            
-            FastVector bool2 = new FastVector();
-            bool2.addElement("not selected");
-            bool2.addElement("selected ");
-            
-            attributes.addElement(new Attribute("class",bool2));
-            
-            return attributes;
-    }
-    
-    public Instances addData(Instances dataset){
-        
-        for(int i=0;i<behavioral.size()+non_behavioral.size();i++){
-            double[] values = new double[drivingFeatures.size()+1];
-            for(int j=0;j<drivingFeatures.size()+1;j++){
-                values[j] = (double) dataFeatureMat[i][j];
-            }
-            Instance thisInstance = new Instance(1.0,values);
-            dataset.add(thisInstance);
-        }
-        return dataset;
-    }
+//    public FastVector setDataFormat(){
+//        
+//            FastVector bool = new FastVector();
+//            bool.addElement("false");
+//            bool.addElement("true");
+//            FastVector attributes = new FastVector();
+//
+//            for(DrivingFeature df:drivingFeatures){
+//                String name = df.getName();
+//                attributes.addElement(new Attribute(name,bool));
+//            }
+//            
+//            FastVector bool2 = new FastVector();
+//            bool2.addElement("not selected");
+//            bool2.addElement("selected ");
+//            
+//            attributes.addElement(new Attribute("class",bool2));
+//            
+//            return attributes;
+//    }
+//    
+//    public Instances addData(Instances dataset){
+//        
+//        for(int i=0;i<behavioral.size()+non_behavioral.size();i++){
+//            double[] values = new double[drivingFeatures.size()+1];
+//            for(int j=0;j<drivingFeatures.size()+1;j++){
+//                values[j] = (double) dataFeatureMat[i][j];
+//            }
+//            Instance thisInstance = new Instance(1.0,values);
+//            dataset.add(thisInstance);
+//        }
+//        return dataset;
+//    }
     
 
 

@@ -81,7 +81,6 @@
 .filter_application_delete{
     background-color: #FF5151;
 	float:left;
-	
 }
 .filter_application_activate {
 	float:left;
@@ -95,7 +94,11 @@
 	float: left;
 	margin-right:4px;
 }
-
+.filter_application_saveThis{
+    float:left;
+    margin-left:5px;
+    margin-right:5px;
+}
 
 
 
@@ -185,16 +188,9 @@
     color: #696969;    
 }
 
-
-
-/*
-#filter_expression{
-    color: black;
-    border: 1px black solid;
-    height: 60px;
-    width: 80%;
-    float: left;
-    margin-left: 5px;
-    overflow:scroll;
+.img-hor-vert {
+    -moz-transform: scale(-1, -1);
+    -o-transform: scale(-1, -1);
+    -webkit-transform: scale(-1, -1);
+    transform: scale(-1, -1);
 }
-*/          

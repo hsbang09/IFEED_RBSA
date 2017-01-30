@@ -64,14 +64,11 @@ function openFilterOptions(){
             .attr("id","applyFilterButton_within")
             .attr("class","filter_options_button")
             .text("Search within selection");
-//    d3.select("#filter_options").append("button")
-//		    .attr("id","applyFilterButton_complement")
-//		    .attr("class","filterOptionButtons")
-//		    .text("Select complement");
+
     d3.select("#filter_buttons").append("button")
-            .attr("id","saveFilter")
+            .attr("id","filter_application_saveAll")
             .attr("class","filter_options_button")
-            .text("Save this filter")
+            .text("Save currently applied filter scheme")
             .attr('disabled', true);
 
     d3.select("#filter_options_dropdown_1").on("change",filter_options_dropdown_1_changed);
@@ -96,6 +93,7 @@ function remove_filter_option_inputs(level){
     d3.selectAll('.filter_hints_div').remove();
     d3.select('#filter_inputs_append_slot_button').remove();
     d3.select('#filter_inputs_append_slot_select').remove();
+    d3.select('#filter_application_saveAll')[0][0].disabled=true;
     
     
     d3.select('#filter_options_dropdown_4').remove();
@@ -104,7 +102,6 @@ function remove_filter_option_inputs(level){
     if(level==2){return;}        
     d3.select('#filter_options_dropdown_2').remove();
     if(level==1){return;}
-    
 }
 
 
@@ -171,7 +168,6 @@ function filter_options_dropdown_preset_filters(){
 function filter_input_preset(selectedOption,userDefOption){
 
     var filter_inputs = d3.select("[id=filter_inputs]");
-
 
     if (selectedOption=="present"){
         append_filterInputField_singleInstInput();
@@ -1112,6 +1108,11 @@ function applyFilter(option){
     	alert("Invalid input argument");
     }
     d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
+    d3.select("#filter_application_saveAll")[0][0].disabled = false;
+    d3.select('#filter_application_saveAll')
+            .on('click',function(d){
+                save_user_defined_filter(null);
+            });
 }
 
 
@@ -1146,9 +1147,36 @@ function update_filter_application_status(inputExpression,option){
     thisFilter.append('div')
             .attr('class','filter_application_expression')
             .text(inputExpression);
+    
+    thisFilter.append('img')
+            .attr('src','img/left_arrow.png')
+            .attr('id','left_arrow')
+            .attr('width','21')
+            .attr('height','21')
+            .style('float','left')
+            .style('margin-left','7px');
+    thisFilter.append('img')
+            .attr('src','img/left_arrow.png')
+            .attr('id','right_arrow')
+            .attr('class','img-hor-vert')
+            .attr('width','21')
+            .attr('height','21')
+            .style('float','left')
+            .style('margin-left','4px')
+            .style('margin-right','7px'); 
+    
+    thisFilter.append('button')
+            .attr('class','filter_application_saveThis')
+            .text('Add this filter')
+            .on('click',function(d){
+                save_user_defined_filter(inputExpression);
+            });
+    
+    
+    
     thisFilter.append('button')
             .attr('class','filter_application_delete')
-            .text('remove');
+            .text('Remove');
     
     
     if(option==="new"){
@@ -1173,6 +1201,9 @@ function update_filter_application_status(inputExpression,option){
         thisFilter.remove();
         if(activated){
             applyComplexFilter();
+        }
+        if(d3.selectAll('.applied_filter')[0].length===0){
+            d3.select('#filter_application_saveAll')[0][0].disabled=true;
         }
     });
     
@@ -1259,3 +1290,14 @@ function applyComplexFilter(){
     d3.select("[id=numOfSelectedArchs_inputBox]").text("" + numOfSelectedArchs());  
 }
 
+
+
+
+function save_user_defined_filter(expression){
+    if(expression){
+        userdef_features.push(expression);
+    }else{
+        var filterExpression = parse_filter_application_status();        
+        userdef_features.push(filterExpression);
+    }
+}

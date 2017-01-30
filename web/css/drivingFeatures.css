@@ -16,6 +16,10 @@
     #df_scope_selection_dropdown_2
     #df_scope_selection_dropdown_3
     
+#df_threshold_setup_div (div)
+    #df_threshold_setup_1
+    #df_threshold_setup_2
+    
 #df_button_div (div)
     (div)
         #run_df_mining_button (button)
@@ -36,6 +40,9 @@
 .df_explanation{
     font-size: 18px;
 }
+
+/* Scope Selection */
+
 #df_scope_selection_div{
     width:100%;
     margin-top:15px;
@@ -48,6 +55,30 @@
     margin-left: 3px;
 }
 
+
+/* Threshold setup */ 
+#df_threshold_setup_div{
+    width:100%;
+    float:left;
+    margin-top: 20px;
+}
+
+.df_threshold_setup{
+    float:left;
+    margin-left: 20px;
+    margin-top:15px;
+    width:80%;
+}
+.df_threshold_setup div{
+    float:left;
+}
+.df_threshold_setup input{
+    float:left;
+    margin-left: 15px;
+}
+
+
+/* Button */
 
 #df_button_div{
     width:100%;
@@ -62,3 +93,27 @@
     width:300px;
     font-size: 18px;
 }
+
+#df_hdf_return_button_div{
+    width:100%;
+    float:left;
+}
+
+
+/*
+Display of Driving Features
+*/
+
+.df_action_button{
+    font-size: 13px;
+    margin-right: 4px;
+}
+
+#featureInfo_box{
+    fill:#4B4B4B;
+    opacity: 0.92;
+}
+                                            
+
+
+

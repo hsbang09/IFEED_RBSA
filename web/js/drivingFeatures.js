@@ -7,9 +7,6 @@
  */
 
 
-
-
-
 function open_df_scope_selection(){
     
     //document.getElementById('tab3').click();
@@ -27,6 +24,8 @@ function open_df_scope_selection(){
             .attr('class','df_explanation_div');
     displayBox.append('div')
             .attr('id','df_scope_selection_div');
+    displayBox.append('div')
+            .attr('id','df_threshold_setup_div');
     displayBox.append('div')
             .attr('id','df_button_div');
     displayBox.append('div')
@@ -89,6 +88,10 @@ function df_scope_selection_dropdown_1(){
 }
 
 function remove_df_scope_selection(level){
+    
+    d3.selectAll('.df_threshold_setup').remove();
+    d3.selectAll('.df_threshold_setup_input').remove();
+    
     d3.select('#df_button_div').select('div').remove(); 
     if(level==3){return;}
     d3.select('#df_scope_selection_dropdown_3').remove();
@@ -97,7 +100,8 @@ function remove_df_scope_selection(level){
     if(level==1){return;}
 }
 
-function append_df_button(scope){    
+function append_df_button(scope){ 
+    append_df_threshold_setup();
     d3.select("#df_button_div")
             .append('div')
             .append("button")
@@ -106,8 +110,48 @@ function append_df_button(scope){
     d3.selectAll("#run_df_mining_button").on("click", function(d){
         runDataMining(scope);
     });    
-
 }
+
+
+
+
+function append_df_threshold_setup(){
+    var input1 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_1')
+            .attr('class','df_threshold_setup');
+    input1.append('div')
+            .text('Support threshold: ');
+    input1.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','0.015');
+
+    var input2 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_2')
+            .attr('class','df_threshold_setup');
+    input2.append('div')
+            .text('Confidence threshold (Recommendation: larger than 0.5): ');
+    input2.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','0.3');
+    
+    var input3 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_3')
+            .attr('class','df_threshold_setup');
+    input3.append('div')
+            .text('Lift threshold (Recommendation: larger than 1): ');
+    input3.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','1');        
+}
+
+
+
 
 function df_scope_selection_dropdown_objectives(){
     remove_df_scope_selection(2);
@@ -177,8 +221,9 @@ function runDataMining(scope) {
         return;
     }
     
-    
+    current_scope = scope;
     processed_features = [];
+    color_drivingFeatures = d3.scale.category10();   
     
     var selectedArchs = d3.selectAll("[class=dot_highlighted]");
     var nonSelectedArchs = d3.selectAll("[class=dot]");
@@ -189,10 +234,6 @@ function runDataMining(scope) {
     	alert("First select target solutions!");
         return;
     }
-
-    buttonClickCount_drivingFeatures += 1;
-    getDrivingFeatures_numOfArchs.push([numOfSelectedArchs,numOfNonSelectedArchs]);
-    getDrivingFeatures_thresholds.push({supp:support_threshold,lift:lift_threshold,conf:confidence_threshold});
 
 
     var selectedBitStrings = [];
@@ -206,8 +247,13 @@ function runDataMining(scope) {
     for (var i = 0; i < numOfNonSelectedArchs; i++) {
         nonSelectedBitStrings.push(nonSelectedArchs[0][i].__data__.ArchID);
     }
+    
+    support_threshold = d3.select('#df_threshold_setup_1').select('.df_threshold_setup_input')[0][0].value;
+    confidence_threshold = d3.select('#df_threshold_setup_2').select('.df_threshold_setup_input')[0][0].value;
+    lift_threshold = d3.select('#df_threshold_setup_3').select('.df_threshold_setup_input')[0][0].value;
 
     sortedDFs = generateDrivingFeatures(scope,selectedBitStrings,nonSelectedBitStrings,
+                            userdef_features,
                             support_threshold,confidence_threshold,lift_threshold,"lift");
     display_drivingFeatures(sortedDFs,"lift");
 
@@ -229,15 +275,18 @@ function runDataMining(scope) {
 
 
 function generateDrivingFeatures(scope,selected,nonSelected,
+                userdef_features,
 		support_threshold,confidence_threshold,lift_threshold,
 		sortBy){
-	
+
+        
     var output;
     $.ajax({
         url: "DrivingFeatureServlet",
         type: "POST",
         data: {ID: "generateDrivingFeatures",selected: JSON.stringify(selected),nonSelected:JSON.stringify(nonSelected),
         	scope:scope,
+                userDefFeatures:JSON.stringify(userdef_features),
                 supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,
         	sortBy:sortBy},
         async: false,
@@ -408,7 +457,31 @@ function display_drivingFeatures(source,sortby) {
     d3.select("[id=basicInfoBox_div]").select("[id=view3]").select("g").remove();
     var infoBox = d3.select("[id=basicInfoBox_div]").select("[id=view3]")
             .append("g");
-
+    
+    
+    infoBox.append('button')
+            .attr('id','df_action_button_delete')
+            .attr('class','df_action_button')
+            .text('Remove selected features')
+            .style('background-color','#FF9393');
+    infoBox.append('button')
+            .attr('id','df_action_button_dm_config')
+            .attr('class','df_action_button')
+            .text('Extract higher order features')
+            .on('click',config_df_mining_higher_order);
+    infoBox.append('button')
+            .attr('id','df_action_button_reset')
+            .attr('class','df_action_button')
+            .text('Reset data mining')
+            .on('click',function(d){
+                selection_changed = true;
+                selected_features = [];
+                removed_features = [];
+                initialize_tabs_driving_features();
+            });    
+    
+    
+    
     var svg_df = infoBox.append("svg")
     		.style("float","left")
             .attr("width", width_df + margin_df.left + margin_df.right)
@@ -567,7 +640,40 @@ function display_drivingFeatures(source,sortby) {
     dfbar_width = d3.select("[class=bar]").attr("width");
 
     var bars = d3.selectAll("[class=bar]")
-   
+            .on("click",function(d){
+                var dfid = d.id;
+                var expression = d.expression;
+                
+                var was_selected = false;
+                for(var i=0;i<selected_features.length;i++){
+                    if(selected_features[i]===expression){
+                        selected_features.splice(i,1);
+                        was_selected = true;
+                    }
+                }
+                
+                if(was_selected){
+                    d3.selectAll("[class=bar]").filter(function(d){
+                        if(d.id===dfid){
+                            return true;
+                        }else{
+                            return false;
+                        }
+                    }).style("stroke-width",0);
+                }else{
+                    d3.selectAll("[class=bar]").filter(function(d){
+                        if(d.id===dfid){
+                            return true;
+                        }else{
+                            return false;
+                        }
+                    }).style("stroke-width",2); 
+                    selected_features.push(expression);
+                    
+                    
+                    
+                }
+            })
                 .on("mouseover",function(d){
 
                     numOfDrivingFeatureViewed = numOfDrivingFeatureViewed+1;
@@ -600,9 +706,7 @@ function display_drivingFeatures(source,sortby) {
                                                     return "translate(" + x + "," + y + ")";
                                                 })
                                                 .attr("width",tooltip_width)
-                                                .attr("height",tooltip_height)
-                                                .style("fill","#4B4B4B")
-                                                .style("opacity", 0.92);
+                                                .attr("height",tooltip_height);
                     var tmp= d.id;
                     var name = d.name;
                     var expression = d.expression;
@@ -700,8 +804,15 @@ function display_drivingFeatures(source,sortby) {
                     d3.select("[id=basicInfoBox_div]").select("[id=view3]").selectAll("[id=featureInfo_tooltip]").remove();
                     d3.select("[id=basicInfoBox_div]").select("[id=view3]").selectAll("[id=foreignObject_tooltip]").remove();
                     var tmp= d.id;
+                    var expression = d.expression;
+                                        
                     d3.selectAll("[class=bar]").filter(function(d){
                            if(d.id===tmp){
+                               for(var i=0;i<selected_features.length;i++){
+                                   if(selected_features[i]===expression){
+                                       return false;
+                                   }
+                               }
                                return true;
                            }else{
                                return false;
@@ -715,7 +826,6 @@ function display_drivingFeatures(source,sortby) {
                     d3.selectAll("[class=dot_selected_DFhighlighted]")
                     		.attr("class", "dot_highlighted")
                             .style("fill","#20DCCC");    
-
                 });
 
 
@@ -740,15 +850,50 @@ function display_drivingFeatures(source,sortby) {
                 .attr("dy", ".35em")
                 .style("text-anchor", "end")
                 .text(function(d) { return d;});
-    
-    
-
-    d3.select("[id=instrumentOptions]")
-            .select("table").remove();
-    
-    d3.select("[id=dfsort_options]").on("change",dfsort);
+        
+        
+        
+    d3.select('#df_action_button_delete')
+            .on('click',function(d){
+                for(var i=0;i<selected_features.length;i++){
+                    var expression = selected_features[i];
+                    var removed = false;
+                    
+                    var leng = userdef_features.length;
+                    for(var j=0;j<leng;j++){
+                        if(userdef_features[j]===expression){
+                            removed=true;
+                            break;
+                        }
+                    }
+                    
+                    if(removed){
+                        userdef_features.splice(j,1);
+                    }else{
+                        removed_features.push(expression);
+                    }
+                    
+                    var dfid;
+                    for(var j=0;j<source.length;j++){
+                        if(source[j].expression===expression){
+                            dfid=j;
+                            break;
+                        }
+                    }
+                    source.splice(dfid,1);
+                }
+                selected_features = [];
+                display_drivingFeatures(source,sortby);
+            });        
+        
+        
+        
+    //d3.select("[id=dfsort_options]").on("change",dfsort);
 }
-                
+             
+             
+             
+             
 
 
 function dfsort(){
@@ -759,11 +904,6 @@ function dfsort(){
     sortedDFs=sortedDrivingFeatures;
     display_drivingFeatures(sortedDrivingFeatures,sortby);
 }
-               
-               
-               
-
-
 
 
 function draw_venn_diagram(df_explanation_box,supp,conf,conf2){
@@ -853,3 +993,106 @@ function draw_venn_diagram(df_explanation_box,supp,conf,conf2){
 }
 
 
+
+
+function config_df_mining_higher_order(){
+
+    d3.select("#basicInfoBox_div").select("#view3").select("g").remove();
+    var displayBox = d3.select("#basicInfoBox_div").select("#view3").append("g");
+    displayBox.append("div")
+            .attr("id","df_title")
+            .append("p")
+            .text("Higher-order feature extraction");
+    
+    displayBox.append('div')
+            .attr('id','df_hdf_return_button_div')
+            .append('button')
+            .attr('id','df_hdf_return_button')
+            .text('Return to feature extraction results')
+            .on('click',function(d){
+                display_drivingFeatures(sortedDFs,"lift");
+            });
+    displayBox.append('div')
+            .attr('id','df_threshold_setup_div');
+    displayBox.append('div')
+            .attr('id','df_button_div');
+    displayBox.append('div')
+            .attr('id','df_explanation_div_2')
+            .attr('class','df_explantion_div');
+
+
+    var input1 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_1')
+            .attr('class','df_threshold_setup');
+    input1.append('div')
+            .text('Support threshold: ');
+    input1.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','0.015');
+
+    var input2 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_2')
+            .attr('class','df_threshold_setup');
+    input2.append('div')
+            .text('Confidence threshold (Recommendation: larger than 0.5): ');
+    input2.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','0.3');
+    
+    var input3 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_3')
+            .attr('class','df_threshold_setup');
+    input3.append('div')
+            .text('Lift threshold (Recommendation: larger than 1): ');
+    input3.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','1');        
+
+    d3.select("#df_button_div")
+            .append('div')
+            .append("button")
+            .attr("id","run_df_mining_button")
+            .text("Extract higher-order driving features");
+    d3.selectAll("#run_df_mining_button").on("click", run_df_mining_higher_order);    
+    
+}
+
+
+function run_df_mining_higher_order(){
+
+    support_threshold = d3.select('#df_threshold_setup_1').select('.df_threshold_setup_input')[0][0].value;
+    confidence_threshold = d3.select('#df_threshold_setup_2').select('.df_threshold_setup_input')[0][0].value;
+    lift_threshold = d3.select('#df_threshold_setup_3').select('.df_threshold_setup_input')[0][0].value;
+
+
+    $.ajax({
+        url: "DrivingFeatureServlet",
+        type: "POST",
+        data: {ID: "generateHigherOrderDrivingFeautres",
+        	scope:current_scope,
+                removedFeatures:JSON.stringify(removed_features),
+                supp:support_threshold,
+                conf:confidence_threshold,
+                lift:lift_threshold,
+        	sortBy:"lift"
+            },
+        async: false,
+        success: function (data, textStatus, jqXHR)
+        {
+            if(data===""){alert("No driving feature found!")}else{
+        	sortedDFs = JSON.parse(data);
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown)
+        {alert("error");}
+    });
+
+    display_drivingFeatures(sortedDFs,"lift");
+    selection_changed = false;    
+}
