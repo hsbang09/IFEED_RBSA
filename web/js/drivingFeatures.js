@@ -1012,6 +1012,15 @@ function config_df_mining_higher_order(){
             .on('click',function(d){
                 display_drivingFeatures(sortedDFs,"lift");
             });
+            
+    var level_selection = displayBox.append('div')
+            .attr('id','df_hdf_level_selection_div');
+    level_selection.append('div')
+            .text('Select the maximum level of features to be mined: ');
+    level_selection.append('input')
+            .attr('id','df_hdf_level_selection_input')
+            .attr('value','2');
+            
     displayBox.append('div')
             .attr('id','df_threshold_setup_div');
     displayBox.append('div')
@@ -1070,6 +1079,7 @@ function run_df_mining_higher_order(){
     confidence_threshold = d3.select('#df_threshold_setup_2').select('.df_threshold_setup_input')[0][0].value;
     lift_threshold = d3.select('#df_threshold_setup_3').select('.df_threshold_setup_input')[0][0].value;
 
+    var maxLevel = d3.select('#df_hdf_level_selection_input')[0][0].value;
 
     $.ajax({
         url: "DrivingFeatureServlet",
@@ -1080,7 +1090,8 @@ function run_df_mining_higher_order(){
                 supp:support_threshold,
                 conf:confidence_threshold,
                 lift:lift_threshold,
-        	sortBy:"lift"
+        	sortBy:"lift",
+                maxLevel:maxLevel
             },
         async: false,
         success: function (data, textStatus, jqXHR)

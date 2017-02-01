@@ -97,31 +97,54 @@ public class Apriori {
                     }                    
                 }
                 l=l+1;
+                
+                if(run_mRMR){
+                    S = sortFeatures(S);
+                    MRMR mRMR = new MRMR();
+                    S = mRMR.minRedundancyMaxRelevance(this.DMMat,this.labels, S ,500);
+                }                
             }
-
-//            if(run_mRMR){
-//                DrivingFeaturesGenerator dfg = new DrivingFeaturesGenerator();
-//                S = dfg.sort(1, S);
-//                ArrayList<SetOfFeatures> S_reduced = new ArrayList<>();
-//                
-//                if(num_features_to_extract==1){
-//                    S_reduced.add(S.get(0));
-//                    return S_reduced;
-//                }
-//                
-//                if(S.size() < DrivingFeaturesParams.max_number_of_features_before_mRMR){
-//                    S_reduced = S;
-//                }else{
-//                    for(int i=0;i<DrivingFeaturesParams.max_number_of_features_before_mRMR;i++){
-//                        S_reduced.add(S.get(i));
-//                    }
-//                }
-//
-//                MRMR mRMR = new MRMR();
-//                S = mRMR.minRedundancyMaxRelevance(dataFeatureMat, S_reduced, num_features_to_extract);
-//            }
             return S;
     }
+    
+    
+    
+    private ArrayList<Feature> sortFeatures(ArrayList<Feature> features){
+        ArrayList<Feature> sorted = new ArrayList<>();
+	
+        double value=0;
+        double maxval = 1000000000;
+        double minval = -1;
+        for(int i=0;i<features.size();i++){
+            Apriori.Feature feat1 = features.get(i);		
+            if(i==0){
+                sorted.add(feat1);
+                continue;
+            }
+            value = feat1.getMetrics()[2]; // Confidence (feature->selection)
+            maxval = sorted.get(0).getMetrics()[2];
+            minval = sorted.get(sorted.size()-1).getMetrics()[2];
+            
+            if(value>=maxval){
+                    sorted.add(0, feat1);
+            } else if (value<=minval){
+                    sorted.add(feat1);
+            } else {
+                for (int j=0;j<sorted.size();j++){
+                        double refval=0; 
+                        double refval2=0;
+                        refval=sorted.get(j).metrics[2];
+                        refval2=sorted.get(j+1).metrics[2];
+                        if(value <=refval && value > refval2){
+                            sorted.add(j+1,feat1); 
+                            break;
+                        }
+                }
+            }
+	}         
+        return sorted;
+    }
+    
 
     
     private ArrayList<Feature> apriori_gen_join(ArrayList<Feature> front){

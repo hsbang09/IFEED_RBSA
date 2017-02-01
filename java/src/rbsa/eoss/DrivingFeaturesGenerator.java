@@ -464,7 +464,7 @@ public class DrivingFeaturesGenerator {
     
     
     
-    public ArrayList<DrivingFeature> getHigherOrderDrivingFeautures(double supp, double conf, double lift){
+    public ArrayList<DrivingFeature> getHigherOrderDrivingFeautures(int level, double supp, double conf, double lift){
         
         ArrayList<DrivingFeature> newDrivingFeatures = new ArrayList<>();
         ArrayList<Integer> removedFeatureIndices = new ArrayList<>();
@@ -492,7 +492,7 @@ public class DrivingFeaturesGenerator {
         double[] thresholds = {this.supp_threshold, this.lift_threshold, this.conf_threshold};
         Apriori ap = new Apriori(drivingFeatures, this.drivingFeaturesMatrix, labels, thresholds);
         ap.setSkip(removedFeatureIndices);
-        ArrayList<Apriori.Feature> features = ap.runApriori(2,false,100);
+        ArrayList<Apriori.Feature> features = ap.runApriori(level,false,100);
         for(Apriori.Feature feat:features){
             String expression="";
             String name="";
@@ -725,99 +725,7 @@ public class DrivingFeaturesGenerator {
     }
     
     
-    
-    
-//    public ArrayList<String> minRedundancyMaxRelevance(int numSelectedFeatures){
-//        
-//        int[][] m = dataFeatureMat;
-//        int numFeatures = m[0].length;
-//        int numData = m.length;
-//        ArrayList<String> selected = new ArrayList<>();
-//        
-//        while(selected.size() < numSelectedFeatures){
-//            double phi = -10000;
-//            int save=0;
-//            for(int i=0;i<numFeatures-1;i++){
-//                if(selected.contains(""+i)){
-//                    continue;
-//                }
-//
-//                double D = getMutualInformation(i,numFeatures-1);
-//                double R = 0;
-//
-//                for (String selected1 : selected) {
-//                    R = R + getMutualInformation(i, Integer.parseInt(selected1));
-//                }
-//                if(!selected.isEmpty()){
-//                   R = (double) R/selected.size();
-//                }
-//                
-////                System.out.println(D-R);
-//                
-//                if(D-R > phi){
-//                    phi = D-R;
-//                    save = i;
-//                }
-//            }
-////            System.out.println(save);
-//            selected.add(""+save);
-//        }
-//        return selected;
-//    }  
-//    public double getMutualInformation(int feature1, int feature2){
-//        
-//        int[][] m = dataFeatureMat;
-//        int numFeatures = m[0].length;
-//        int numData = m.length;
-//        double I;
-//        
-//        int x1=0,x2=0;
-//        int x1x2=0,nx1x2=0,x1nx2=0,nx1nx2=0;      
-//
-//        for(int k=0;k<numData;k++){
-//            if(m[k][feature1]==1){ // x1==1
-//                x1++;
-//                if(m[k][feature2]==1){ // x2==1
-//                    x2++;
-//                    x1x2++;
-//                } else{ // x2!=1
-//                    x1nx2++;
-//                }
-//            } else{ // x1!=1
-//                if(m[k][feature2]==1){ // x2==1 
-//                    x2++;
-//                    nx1x2++;
-//                }else{ // x2!=1
-//                    nx1nx2++;
-//                }
-//            }
-//        }
-//        double p_x1 =(double) x1/numData;
-//        double p_nx1 = (double) 1-p_x1;
-//        double p_x2 = (double) x2/numData;
-//        double p_nx2 = (double) 1-p_x2;
-//        double p_x1x2 = (double) x1x2/numData;
-//        double p_nx1x2 = (double) nx1x2/numData;
-//        double p_x1nx2 = (double) x1nx2/numData;
-//        double p_nx1nx2 = (double) nx1nx2/numData;
-//        
-//        if(p_x1==0){p_x1 = 0.0001;}
-//        if(p_nx1==0){p_nx1=0.0001;}
-//        if(p_x2==0){p_x2=0.0001;}
-//        if(p_nx2==0){p_nx2=0.0001;}
-//        if(p_x1x2==0){p_x1x2=0.0001;}
-//        if(p_nx1x2==0){p_nx1x2=0.0001;}
-//        if(p_x1nx2==0){p_x1nx2=0.0001;}
-//        if(p_nx1nx2==0){p_nx1nx2=0.0001;}
-//        
-//        double i1 = p_x1x2*Math.log(p_x1x2/(p_x1*p_x2));
-//        double i2 = p_x1nx2*Math.log(p_x1nx2/(p_x1*p_nx2));
-//        double i3 = p_nx1x2*Math.log(p_nx1x2/(p_nx1*p_x2));
-//        double i4 = p_nx1nx2*Math.log(p_nx1nx2/(p_nx1*p_nx2));
-//
-//        I = i1 + i2 + i3 + i4;
-//        return I;
-//    }
+
     
     
 //    public FastVector setDataFormat(){

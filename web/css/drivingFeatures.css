@@ -56,11 +56,31 @@
 }
 
 
-/* Threshold setup */ 
+/* Threshold setup */
+
+
+#df_hdf_level_selection_div{
+    width:80%;
+    float:left;
+    margin-left:20px;
+    margin-top: 15px;
+}
+#df_hdf_level_selection div{
+    float:left;
+    margin-left: 15px;
+    margin-right: 10px;
+}
+#df_hdf_level_selection input{
+    float:left;
+}
+
+
+
+
 #df_threshold_setup_div{
     width:100%;
     float:left;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 
 .df_threshold_setup{
@@ -98,6 +118,7 @@
     width:100%;
     float:left;
 }
+
 
 
 /*

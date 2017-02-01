@@ -186,8 +186,10 @@ public class DrivingFeatureServlet extends HttpServlet {
             double conf = Double.parseDouble(request.getParameter("conf"));
             double lift = Double.parseDouble(request.getParameter("lift"));             
             
+            int level = Integer.parseInt(request.getParameter("maxLevel"));             
+            
             dfsGen.setRemovedFeatures(removed_features_split);
-            ArrayList<DrivingFeature> dfs = dfsGen.getHigherOrderDrivingFeautures(supp,conf,lift);                    
+            ArrayList<DrivingFeature> dfs = dfsGen.getHigherOrderDrivingFeautures(level,supp,conf,lift);                    
             
             if(dfs.isEmpty()){
                 outputString="";
