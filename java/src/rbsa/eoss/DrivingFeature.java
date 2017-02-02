@@ -12,18 +12,21 @@ package rbsa.eoss;
  
 public class DrivingFeature{
         
+        private int DFID; // id number
         private String name; // specific names
         private String expression; // inOrbit, together, separate, present, absent, etc.
         private boolean preset;
         private double[] metrics;
         
 
-        public DrivingFeature(String name, String expression){
+        public DrivingFeature(int id, String name, String expression){
+            this.DFID=id;
             this.name = name;
             this.expression=expression;
             this.preset = false;
         }
-        public DrivingFeature(String name, String expression, double[] metrics, boolean preset){
+        public DrivingFeature(int id, String name, String expression, double[] metrics, boolean preset){
+            this.DFID=id;
             this.name = name;
             this.expression = expression;
             this.metrics = metrics;
@@ -34,5 +37,6 @@ public class DrivingFeature{
         public String getName(){return name;}
         public double[] getMetrics(){return metrics;}
         public boolean isPreset(){return preset;}
+        public int getID(){return this.DFID;}
         
     }

@@ -25,6 +25,8 @@ public class Apriori {
     int ncols;
     ArrayList<Integer> skip;
     
+    public Apriori(){}
+    
     public Apriori(ArrayList<DrivingFeature> drivingFeatures, double[][] mat, double[] labels, double[] thresholds){
     	this.drivingFeatures = drivingFeatures;
     	this.nrows = mat.length;
@@ -49,6 +51,7 @@ public class Apriori {
             // Define the initial set of features
             ArrayList<Feature> S = new ArrayList<>();
             
+            // Skip the feature if its index is included in the 'skip'
             for(int i=0;i<mat[0].length;i++){
                 if(skip.contains(i)){continue;}
                 Feature newFeat = new Feature(i);
@@ -96,20 +99,14 @@ public class Apriori {
                         }
                     }                    
                 }
-                l=l+1;
-                
-                if(run_mRMR){
-                    S = sortFeatures(S);
-                    MRMR mRMR = new MRMR();
-                    S = mRMR.minRedundancyMaxRelevance(this.DMMat,this.labels, S ,500);
-                }                
+                l=l+1;              
             }
             return S;
     }
     
     
     
-    private ArrayList<Feature> sortFeatures(ArrayList<Feature> features){
+    public ArrayList<Feature> sortFeatures(ArrayList<Feature> features){
         ArrayList<Feature> sorted = new ArrayList<>();
 	
         double value=0;

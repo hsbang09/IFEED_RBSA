@@ -177,19 +177,60 @@ public class DrivingFeatureServlet extends HttpServlet {
             
         } 
         
+        else if(requestID.equalsIgnoreCase("runFeatureSelection")){
+
+            String removed_features = request.getParameter("removedFeatures");
+            String[] removed_features_split = removed_features.substring(1, removed_features.length()-1).split(",");
+            int[] removed_features_id = new int[removed_features_split.length];
+            for(int i=0;i<removed_features_split.length;i++){
+                if(removed_features_split[i].isEmpty()){
+                    continue;
+                }
+                removed_features_id[i]=Integer.parseInt(removed_features_split[i]);
+            }            
+            
+            int numFeatures = Integer.parseInt(request.getParameter("numFeatures"));           
+
+            dfsGen.setRemovedFeatures(removed_features_id);
+            ArrayList<DrivingFeature> dfs = dfsGen.runFeatureSelection(numFeatures);                    
+            
+            if(dfs.isEmpty()){
+                outputString="";
+            }
+            else{
+                String sortingCriteria = request.getParameter("sortBy");
+                System.out.println("Number of driving features found:"  + dfs.size());
+                ArrayList<DrivingFeature> sorted = this.sort(dfs, sortingCriteria);
+                String jsonObj = gson.toJson(sorted);
+                outputString = jsonObj;
+            }                  
+
+            long t1 = System.currentTimeMillis();
+            System.out.println( "Feature selection done in: " + String.valueOf(t1-t0) + " msec");            
+        }
+        
+        
+        
         else if (requestID.equalsIgnoreCase("generateHigherOrderDrivingFeautres")){
                         
             String removed_features = request.getParameter("removedFeatures");
             String[] removed_features_split = removed_features.substring(1, removed_features.length()-1).split(",");
-
+            int[] removed_features_id = new int[removed_features_split.length];
+            for(int i=0;i<removed_features_split.length;i++){
+                if(removed_features_split[i].isEmpty()){
+                    continue;
+                }
+                removed_features_id[i]=Integer.parseInt(removed_features_split[i]);
+            }
+            
             double supp = Double.parseDouble(request.getParameter("supp"));
             double conf = Double.parseDouble(request.getParameter("conf"));
             double lift = Double.parseDouble(request.getParameter("lift"));             
             
-            int level = Integer.parseInt(request.getParameter("maxLevel"));             
+            //int level = Integer.parseInt(request.getParameter("maxLevel"));             
             
-            dfsGen.setRemovedFeatures(removed_features_split);
-            ArrayList<DrivingFeature> dfs = dfsGen.getHigherOrderDrivingFeautures(level,supp,conf,lift);                    
+            dfsGen.setRemovedFeatures(removed_features_id);
+            ArrayList<DrivingFeature> dfs = dfsGen.getHigherOrderDrivingFeautures(supp,conf,lift);                    
             
             if(dfs.isEmpty()){
                 outputString="";

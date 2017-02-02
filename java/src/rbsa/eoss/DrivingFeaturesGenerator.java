@@ -30,6 +30,8 @@ import weka.core.FastVector;
 import weka.core.Instance;
 import weka.core.Instances;
 
+import org.jblas.DoubleMatrix;
+
 /**
  *
  * @author Bang
@@ -68,7 +70,7 @@ public class DrivingFeaturesGenerator {
     private ArrayList<String> exclude_science_measurement;
     
     private ArrayList<String> userDefFeatures;
-    private ArrayList<String> removedFeatures;
+    private ArrayList<Integer> removedFeatures;
     
     public DrivingFeaturesGenerator(){
         this.dbquery = new DBQueryBuilder();
@@ -107,14 +109,15 @@ public class DrivingFeaturesGenerator {
         exclude_science_measurement = new ArrayList<String>(Arrays.asList(exclude_science_measurement_array));
         
         userDefFeatures = new ArrayList<>();
-        removedFeatures = new ArrayList<>();
-                
-        
+        removedFeatures = new ArrayList<>();        
     }
     
  
 
     public ArrayList<DrivingFeature> getDrivingFeatures (){
+        
+        // Assign unique id numbers for each driving feature
+        int dfid = 0;
         
         // Get all archIDs
         ArrayList<Integer> allArchIDList = dbquery.getAllArchIDs(scope);          
@@ -187,7 +190,8 @@ public class DrivingFeaturesGenerator {
                 ArrayList<Integer> matchedArchIDs = feh.processSingleFilterExpression(feature_expression_inside,true);
                 double[] metrics = this.computeMetrics(matchedArchIDs);
                 if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
-                    drivingFeatures.add(new DrivingFeature(name,feature,metrics,true));
+                    drivingFeatures.add(new DrivingFeature(dfid, name,feature,metrics,true));
+                    dfid++;
                     int[] satArray = satisfactionArray(matchedArchIDs,population); 
                     satList.add(satArray);
                 }
@@ -427,7 +431,8 @@ public class DrivingFeaturesGenerator {
                     }
 
                     if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
-                        drivingFeatures.add(new DrivingFeature(feature_name,feature_expression, metrics,false));
+                        drivingFeatures.add(new DrivingFeature(dfid,feature_name,feature_expression, metrics,false));
+                        dfid++;
                         int[] satArray = satisfactionArray(matchedArchIDs,population); 
                         satList.add(satArray);
                     }                       
@@ -444,7 +449,8 @@ public class DrivingFeaturesGenerator {
                 ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(exp, new ArrayList<Integer>(), "||");
                 double[] metrics = this.computeMetrics(matchedArchIDs);
                 if(metrics[0]>supp_threshold && metrics[1] > lift_threshold && metrics[2] > conf_threshold && metrics[3] > conf_threshold){
-                    drivingFeatures.add(new DrivingFeature(exp,exp,metrics,true));
+                    drivingFeatures.add(new DrivingFeature(dfid,exp,exp,metrics,true));
+                    dfid++;
                     int[] satArray = satisfactionArray(matchedArchIDs,population); 
                     satList.add(satArray);
                 }             
@@ -463,23 +469,23 @@ public class DrivingFeaturesGenerator {
     }
     
     
-    
-    public ArrayList<DrivingFeature> getHigherOrderDrivingFeautures(int level, double supp, double conf, double lift){
-        
+    public ArrayList<DrivingFeature> runFeatureSelection(int numFeatures){
+
         ArrayList<DrivingFeature> newDrivingFeatures = new ArrayList<>();
-        ArrayList<Integer> removedFeatureIndices = new ArrayList<>();
         
-        for(String rf:this.removedFeatures){
+        // Find indices of removed features 
+        //(Note: index and IDs are different!)
+        ArrayList<Integer> removedFeatureIndices = new ArrayList<>();
+        for(int rf:this.removedFeatures){
             for(int i=0;i<this.drivingFeatures.size();i++){
-                if(this.drivingFeatures.get(i).getExpression().equalsIgnoreCase(rf)){
+                if(this.drivingFeatures.get(i).getID()==rf){
                     removedFeatureIndices.add(i);
                     break;
                 }
             }
         }
-
         
-        this.setThresholds(supp, conf, lift);
+        // Create an array containing labels
         double[] labels = new double[population.size()];
         for(int i=0;i<population.size();i++){
             int id = population.get(i);
@@ -489,14 +495,116 @@ public class DrivingFeaturesGenerator {
                 labels[i] = 0.0;
             }
         }
+        
+        
+        Apriori tempAp = new Apriori();
+        ArrayList<Apriori.Feature> S = new ArrayList<>();
+        // Generate an ArrayList containing instances of Apriori.Feature
+        for(int i=0;i<this.drivingFeaturesMatrix[0].length;i++){
+            if(removedFeatureIndices.contains(i)){continue;}
+            // Create a new Apriori.Feature instance
+            Apriori.Feature newFeat = tempAp.new Feature(i);
+            double[] metrics = drivingFeatures.get(i).getMetrics();
+            // Copy over the metrics
+            newFeat.setMetrics(metrics);
+            S.add(newFeat);
+        }              
+        // Sort features based on confidence(feature->selection)
+        // Changing the order of features here is okay because the feature indices are saved as 'elements' in Apriori.Feature
+        S = tempAp.sortFeatures(S);
+        MRMR mRMR = new MRMR();
+        // Run feature selection algorithm
+        S = mRMR.minRedundancyMaxRelevance(new DoubleMatrix(this.drivingFeaturesMatrix),labels, S ,numFeatures);
+        
+        // Create a new list of driving featues and assign new IDs
+        ArrayList<Integer> included_columns=new ArrayList<>();
+        int id=0;
+        for(Apriori.Feature feat:S){
+            int featureIndex = feat.getElements().get(0);
+            DrivingFeature df = this.drivingFeatures.get(featureIndex);
+            included_columns.add(featureIndex);
+            DrivingFeature newdf = new DrivingFeature(id,df.getName(),df.getExpression(), df.getMetrics(), df.isPreset());
+            id++;
+            newDrivingFeatures.add(df);
+        }    
+        
+        DoubleMatrix old_sat_matrix = new DoubleMatrix(this.drivingFeaturesMatrix);
+        DoubleMatrix new_sat_matrix = DoubleMatrix.zeros(this.drivingFeaturesMatrix.length,S.size());
+        for(int i=0;i<included_columns.size();i++){
+            DoubleMatrix col = old_sat_matrix.getColumn(included_columns.get(i));
+            new_sat_matrix.putColumn(i,col);
+        }
+        this.drivingFeatures=newDrivingFeatures;
+        this.drivingFeaturesMatrix=new_sat_matrix.toArray2();
+        
+        return newDrivingFeatures;      
+    }
+    
+    
+    public ArrayList<DrivingFeature> getHigherOrderDrivingFeautures(double supp, double conf, double lift){
+        
+        ArrayList<DrivingFeature> newDrivingFeatures = new ArrayList<>();
+        
+        // Find indices of removed features 
+        //(Note: index and IDs are different!)
+        ArrayList<Integer> removedFeatureIndices = new ArrayList<>();
+        for(int rf:this.removedFeatures){
+            for(int i=0;i<this.drivingFeatures.size();i++){
+                if(this.drivingFeatures.get(i).getID()==rf){
+                    removedFeatureIndices.add(i);
+                    break;
+                }
+            }
+        }
+        
+        // Create an array containing labels
+        double[] labels = new double[population.size()];
+        for(int i=0;i<population.size();i++){
+            int id = population.get(i);
+            if(behavioral.contains(id)){
+                labels[i] = 1.0;
+            }else{
+                labels[i] = 0.0;
+            }
+        }
+        
+        // Set threshold values
+        this.setThresholds(supp, conf, lift);
         double[] thresholds = {this.supp_threshold, this.lift_threshold, this.conf_threshold};
+        
+        // Create a new instance of Apriori
         Apriori ap = new Apriori(drivingFeatures, this.drivingFeaturesMatrix, labels, thresholds);
+        // Set list of feature indices to be not used
         ap.setSkip(removedFeatureIndices);
-        ArrayList<Apriori.Feature> features = ap.runApriori(level,false,100);
-        for(Apriori.Feature feat:features){
+        
+        // Run Apriori algorithm
+        ArrayList<Apriori.Feature> new_features = ap.runApriori(2,false,100);
+
+        // Create a new drivingFeaturesMatrix. 
+        // Row represents each sample and each column represents newly defined features
+        int number_of_old_features = this.drivingFeatures.size();
+        // Generate a matrix whose size is [num_old_features, num_new_features]
+        DoubleMatrix mapping_old_and_new_feature_indices = DoubleMatrix.zeros(number_of_old_features,new_features.size());
+        int[] save_feature_length = new int[new_features.size()];
+        
+        // Create a new list of driving features (assign new IDs)
+        int id=0;
+        for(int f=0;f<new_features.size();f++){
+            
+            Apriori.Feature feat = new_features.get(f);
             String expression="";
             String name="";
             ArrayList<Integer> featureIndices = feat.getElements();
+            
+            int[] indices_array = new int[featureIndices.size()];
+            for(int i=0;i<featureIndices.size();i++){
+                indices_array[i] = featureIndices.get(i);
+            }
+        	
+            // Update mapping between old and new feature indices
+            mapping_old_and_new_feature_indices.put(indices_array, f, 1.0);
+            save_feature_length[f] = featureIndices.size();
+                
             boolean first = true;
             for(int index:featureIndices){
                 if(first){
@@ -511,12 +619,29 @@ public class DrivingFeaturesGenerator {
                 name = name + thisDF.getName();
             }
             double[] metrics = feat.getMetrics();
-            DrivingFeature df = new DrivingFeature(name,expression, metrics, false);
+            DrivingFeature df = new DrivingFeature(id,name,expression, metrics, false);
+            id++;
             newDrivingFeatures.add(df);
         }
         
+        // Define the new feature satisfaction matrix       
+        DoubleMatrix prev_sat_matrix = new DoubleMatrix(this.drivingFeaturesMatrix);
+        DoubleMatrix new_sat_matrix = prev_sat_matrix.mmul(mapping_old_and_new_feature_indices);        
+        
+        DoubleMatrix newDrivingFeaturesMatrix = DoubleMatrix.zeros(new_sat_matrix.getRows(), new_sat_matrix.getColumns());
+        for(int i=0;i<new_sat_matrix.getColumns();i++){
+            DoubleMatrix col = new_sat_matrix.getColumn(i);
+            col = col.eq(save_feature_length[i]);
+            newDrivingFeaturesMatrix.putColumn(i, col);
+        }
+        
+        this.drivingFeaturesMatrix = newDrivingFeaturesMatrix.toArray2();
+        this.drivingFeatures = newDrivingFeatures;
         return newDrivingFeatures;
     }
+    
+    
+    
     
     
     
@@ -701,12 +826,10 @@ public class DrivingFeaturesGenerator {
     }
 
     
-    public void setRemovedFeatures(String[] removed){
+    public void setRemovedFeatures(int[] removed){
         removedFeatures = new ArrayList<>();
-        for(String r:removed){
-            if(!r.isEmpty()){
-                removedFeatures.add(r);
-            }
+        for(int r:removed){
+            removedFeatures.add(r);
         }
     }
     public void setUserDefFeatures(String[] userdef){

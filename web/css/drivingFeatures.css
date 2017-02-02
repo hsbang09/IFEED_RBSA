@@ -17,15 +17,30 @@
     #df_scope_selection_dropdown_3
     
 #df_threshold_setup_div (div)
-    #df_threshold_setup_1
+    #df_threshold_setup_1 (.df_threshold_setup)
     #df_threshold_setup_2
     
 #df_button_div (div)
-    (div)
-        #run_df_mining_button (button)
+    div
+    #run_df_mining_button (button)
 #df_explanation_div_2 (div)
     .df_explanation (div)
+
+##########################################
+####### Data mining config options #########
+##########################################
+
+#df_hdf_return_button_div
+    #df_hdf_return_button (button)
+
+#df_hdf_level_selection_div
+    div
+    #df_hdf_level_selection_input (input)
+
+
 */
+
+
 
 #df_title{
     width:100%;
@@ -65,14 +80,15 @@
     margin-left:20px;
     margin-top: 15px;
 }
-#df_hdf_level_selection div{
+#df_hdf_level_selection_div div{
     float:left;
     margin-left: 15px;
     margin-right: 10px;
 }
-#df_hdf_level_selection input{
+#df_hdf_level_selection_div input{
     float:left;
 }
+
 
 
 

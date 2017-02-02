@@ -465,6 +465,11 @@ function display_drivingFeatures(source,sortby) {
             .text('Remove selected features')
             .style('background-color','#FF9393');
     infoBox.append('button')
+            .attr('id','df_action_button_mrmr')
+            .attr('class','df_action_button')
+            .text('Run feature selection')
+            .on('click',config_df_feature_selection);
+    infoBox.append('button')
             .attr('id','df_action_button_dm_config')
             .attr('class','df_action_button')
             .text('Extract higher order features')
@@ -641,12 +646,12 @@ function display_drivingFeatures(source,sortby) {
 
     var bars = d3.selectAll("[class=bar]")
             .on("click",function(d){
-                var dfid = d.id;
+                var DFID = d.DFID;
                 var expression = d.expression;
                 
                 var was_selected = false;
                 for(var i=0;i<selected_features.length;i++){
-                    if(selected_features[i]===expression){
+                    if(selected_features[i]===DFID){
                         selected_features.splice(i,1);
                         was_selected = true;
                     }
@@ -654,7 +659,7 @@ function display_drivingFeatures(source,sortby) {
                 
                 if(was_selected){
                     d3.selectAll("[class=bar]").filter(function(d){
-                        if(d.id===dfid){
+                        if(d.DFID===DFID){
                             return true;
                         }else{
                             return false;
@@ -662,14 +667,13 @@ function display_drivingFeatures(source,sortby) {
                     }).style("stroke-width",0);
                 }else{
                     d3.selectAll("[class=bar]").filter(function(d){
-                        if(d.id===dfid){
+                        if(d.DFID===DFID){
                             return true;
                         }else{
                             return false;
                         }
                     }).style("stroke-width",2); 
-                    selected_features.push(expression);
-                    
+                    selected_features.push(DFID);
                     
                     
                 }
@@ -707,7 +711,7 @@ function display_drivingFeatures(source,sortby) {
                                                 })
                                                 .attr("width",tooltip_width)
                                                 .attr("height",tooltip_height);
-                    var tmp= d.id;
+                    var DFID= d.DFID;
                     var name = d.name;
                     var expression = d.expression;
                     var lift = d.metrics[1];
@@ -717,7 +721,7 @@ function display_drivingFeatures(source,sortby) {
                     var preset = d.preset;
 
                     d3.selectAll("[class=bar]").filter(function(d){
-                        if(d.id===tmp){
+                        if(d.DFID===DFID){
                             return true;
                         }else{
                             return false;
@@ -728,7 +732,7 @@ function display_drivingFeatures(source,sortby) {
                     
                     var matchedArchIDs=null;
                     for(var i=0;i<processed_features.length;i++){
-                        if(processed_features[i].expression===expression){
+                        if(processed_features[i].DFID===DFID){
                             matchedArchIDs = processed_features[i].matchedArchIDs;
                         }
                     }
@@ -745,7 +749,7 @@ function display_drivingFeatures(source,sortby) {
                             error: function (jqXHR, textStatus, errorThrown)
                             {alert("Error in applying the filter");}
                         });
-                        processed_features.push({expression:expression,matchedArchIDs:matchedArchIDs});
+                        processed_features.push({DFID:DFID,expression:expression,matchedArchIDs:matchedArchIDs});
                     }
 
 
@@ -803,13 +807,13 @@ function display_drivingFeatures(source,sortby) {
                 .on("mouseout",function(d){
                     d3.select("[id=basicInfoBox_div]").select("[id=view3]").selectAll("[id=featureInfo_tooltip]").remove();
                     d3.select("[id=basicInfoBox_div]").select("[id=view3]").selectAll("[id=foreignObject_tooltip]").remove();
-                    var tmp= d.id;
+                    var DFID= d.DFID;
                     var expression = d.expression;
                                         
                     d3.selectAll("[class=bar]").filter(function(d){
-                           if(d.id===tmp){
+                           if(d.DFID===DFID){
                                for(var i=0;i<selected_features.length;i++){
-                                   if(selected_features[i]===expression){
+                                   if(selected_features[i]===DFID){
                                        return false;
                                    }
                                }
@@ -828,59 +832,47 @@ function display_drivingFeatures(source,sortby) {
                             .style("fill","#20DCCC");    
                 });
 
+                if(color_drivingFeatures.domain().length > 10){
+                    // skip drawing legend
+                }else{
 
-        // draw legend
-        var legend_df = objects.selectAll(".legend")
-                        .data(color_drivingFeatures.domain())
-                        .enter().append("g")
-                        .attr("class", "legend")
-                        .attr("transform", function(d, i) { return "translate(0," + (i * 20) + ")"; });
+                    // draw legend
+                    var legend_df = objects.selectAll(".legend")
+                                    .data(color_drivingFeatures.domain())
+                                    .enter().append("g")
+                                    .attr("class", "legend")
+                                    .attr("transform", function(d, i) { return "translate(0," + (i * 20) + ")"; });
 
-            // draw legend colored rectangles
-        legend_df.append("rect")
-                .attr("x", 655)
-                .attr("width", 18)
-                .attr("height", 18)
-                .style("fill", color_drivingFeatures);
+                        // draw legend colored rectangles
+                    legend_df.append("rect")
+                            .attr("x", 655)
+                            .attr("width", 18)
+                            .attr("height", 18)
+                            .style("fill", color_drivingFeatures);
 
-            // draw legend text
-        legend_df.append("text")
-                .attr("x", 655)
-                .attr("y", 9)
-                .attr("dy", ".35em")
-                .style("text-anchor", "end")
-                .text(function(d) { return d;});
-        
+                        // draw legend text
+                    legend_df.append("text")
+                            .attr("x", 655)
+                            .attr("y", 9)
+                            .attr("dy", ".35em")
+                            .style("text-anchor", "end")
+                            .text(function(d) { return d;});
+
+                }
+
         
         
     d3.select('#df_action_button_delete')
             .on('click',function(d){
                 for(var i=0;i<selected_features.length;i++){
-                    var expression = selected_features[i];
-                    var removed = false;
-                    
-                    var leng = userdef_features.length;
-                    for(var j=0;j<leng;j++){
-                        if(userdef_features[j]===expression){
-                            removed=true;
-                            break;
-                        }
-                    }
-                    
-                    if(removed){
-                        userdef_features.splice(j,1);
-                    }else{
-                        removed_features.push(expression);
-                    }
-                    
-                    var dfid;
+                    var DFID = selected_features[i];                    
+                    removed_features.push(DFID);
                     for(var j=0;j<source.length;j++){
-                        if(source[j].expression===expression){
-                            dfid=j;
+                        if(source[j].DFID===DFID){
                             break;
                         }
                     }
-                    source.splice(dfid,1);
+                    source.splice(j,1);
                 }
                 selected_features = [];
                 display_drivingFeatures(source,sortby);
@@ -888,6 +880,7 @@ function display_drivingFeatures(source,sortby) {
         
         
         
+    num_features=d3.selectAll('.bar')[0].length;
     //d3.select("[id=dfsort_options]").on("change",dfsort);
 }
              
@@ -1106,4 +1099,75 @@ function run_df_mining_higher_order(){
 
     display_drivingFeatures(sortedDFs,"lift");
     selection_changed = false;    
+}
+
+function config_df_feature_selection(){
+    
+    d3.select("#basicInfoBox_div").select("#view3").select("g").remove();
+    var displayBox = d3.select("#basicInfoBox_div").select("#view3").append("g");
+    displayBox.append("div")
+            .attr("id","df_title")
+            .append("p")
+            .text("Feature selection (Minimum redundancy maximum relevance algorithm");
+    
+    displayBox.append('div')
+            .attr('id','df_hdf_return_button_div')
+            .append('button')
+            .attr('id','df_hdf_return_button')
+            .text('Return to feature extraction results')
+            .on('click',function(d){
+                display_drivingFeatures(sortedDFs,"lift");
+            });
+            
+    var level_selection = displayBox.append('div')
+            .attr('id','df_hdf_level_selection_div');
+    level_selection.append('div')
+            .text(function(){
+                return 'Select the the number of features to be selected ('+ num_features +' currently shown): ';
+            });
+    level_selection.append('input')
+            .attr('id','df_hdf_level_selection_input');
+            
+    displayBox.append('div')
+            .attr('id','df_threshold_setup_div');
+    displayBox.append('div')
+            .attr('id','df_button_div');
+    displayBox.append('div')
+            .attr('id','df_explanation_div_2')
+            .attr('class','df_explantion_div');
+    
+    d3.select("#df_button_div")
+            .append('div')
+            .append("button")
+            .attr("id","run_df_mining_button")
+            .text("Run feature selection");
+    d3.selectAll("#run_df_mining_button").on("click", run_df_feature_selection);        
+}
+
+function run_df_feature_selection(){
+    
+    var numFeatures = d3.select('#df_hdf_level_selection_input')[0][0].value;
+
+    $.ajax({
+        url: "DrivingFeatureServlet",
+        type: "POST",
+        data: {ID: "runFeatureSelection",
+        	scope:current_scope,
+                removedFeatures:JSON.stringify(removed_features),
+        	sortBy:"lift",
+                numFeatures:numFeatures
+            },
+        async: false,
+        success: function (data, textStatus, jqXHR)
+        {
+            if(data===""){alert("No driving feature found!")}else{
+        	sortedDFs = JSON.parse(data);
+            }
+        },
+        error: function (jqXHR, textStatus, errorThrown)
+        {alert("error");}
+    });
+
+    display_drivingFeatures(sortedDFs,"lift");
+    selection_changed = false;      
 }
