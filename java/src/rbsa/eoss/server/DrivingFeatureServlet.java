@@ -128,6 +128,7 @@ public class DrivingFeatureServlet extends HttpServlet {
             double support_threshold = Double.parseDouble(request.getParameter("supp"));
             double confidence_threshold = Double.parseDouble(request.getParameter("conf"));
             double lift_threshold = Double.parseDouble(request.getParameter("lift")); 
+            int numIntervals = Integer.parseInt(request.getParameter("numIntervals")); 
              
             //[1,2,3,4,5]
             String selectedArchs_raw = request.getParameter("selected");
@@ -148,13 +149,21 @@ public class DrivingFeatureServlet extends HttpServlet {
             String scope = request.getParameter("scope");
             
             dfsGen = new DrivingFeaturesGenerator(dbq);
-            dfsGen.initialize(scope, behavioral, non_behavioral, support_threshold,confidence_threshold,lift_threshold);
+            dfsGen.initialize(scope, behavioral, non_behavioral, support_threshold,confidence_threshold,lift_threshold, numIntervals);
             
             String userdef_features = request.getParameter("userDefFeatures");
+                        
             String[] userdef_features_split = {};
             if(!userdef_features.isEmpty()){
-                userdef_features_split= userdef_features.substring(1, userdef_features.length()-1).split(",");
+                if(userdef_features.startsWith("[") && userdef_features.endsWith("]")){
+                    userdef_features = userdef_features.substring(1,userdef_features.length()-1);
+                }
+                if(userdef_features.startsWith("\"") && userdef_features.endsWith("\"")){
+                    userdef_features = userdef_features.substring(1,userdef_features.length()-1);
+                }
+                userdef_features_split= userdef_features.split("\",\"");
             }
+
 
             dfsGen.setUserDefFeatures(userdef_features_split);
             DFs = dfsGen.getDrivingFeatures();
@@ -275,7 +284,6 @@ public class DrivingFeatureServlet extends HttpServlet {
 
         else if(requestID.equalsIgnoreCase("applyComplexFilter")){
             String filterExpression_raw = request.getParameter("filterExpression");
-            System.out.println(filterExpression_raw);
             ArrayList<Integer> matchedArchIDs = feh.processFilterExpression(filterExpression_raw, new ArrayList<Integer>(), "||");
             String jsonObj = gson.toJson(matchedArchIDs);
             outputString = jsonObj;            

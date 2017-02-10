@@ -164,7 +164,7 @@ function draw_scatterPlot(source) {
             .data(source)
             .enter().append("circle")
             .attr("class", "dot")
-            .attr("r", 4)
+            .attr("r", 5)
             .attr("transform", function (d) {
                 var xCoord = xMap(d);
                 var yCoord = yMap(d);
@@ -910,6 +910,8 @@ function set_selection_option(selected_option){
 function round_num_2_perc(num){
 	return Math.round((num + 0.01) * 100);
 }
-
+function round_num_2_dec(num){
+	return +num.toFixed(3);
+}
 
 

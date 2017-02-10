@@ -1295,6 +1295,9 @@ function applyComplexFilter(){
 
 function save_user_defined_filter(expression){
     if(expression){
+        if(expression.substring(0,1)!=="{"){
+            expression = "{" + expression + "}";
+        }
         userdef_features.push(expression);
     }else{
         var filterExpression = parse_filter_application_status();        

@@ -25,6 +25,8 @@ public class Apriori {
     int ncols;
     ArrayList<Integer> skip;
     
+    int cnt =0;
+    
     public Apriori(){}
     
     public Apriori(ArrayList<DrivingFeature> drivingFeatures, double[][] mat, double[] labels, double[] thresholds){
@@ -259,7 +261,7 @@ public class Apriori {
         }
         
         DoubleMatrix cond = DoubleMatrix.zeros(ncols,1);
-        cond.put(indices,0,  1.0);
+        cond.put(indices, 0,  1.0);
 
         double cnt_all = nrows;
         double cnt_F = 0;
@@ -271,6 +273,8 @@ public class Apriori {
         cnt_SF = label.dot(countMat);
         cnt_S = label.norm1();
         cnt_F = countMat.norm1();
+
+
         double[] metrics = new double[4];
         double support = cnt_SF/cnt_all;
         double lift = (cnt_SF/cnt_S) / (cnt_F/cnt_all);
@@ -281,6 +285,7 @@ public class Apriori {
         metrics[1] = lift;
         metrics[2] = conf_given_F;
         metrics[3] = conf_given_S;
+        
         return metrics;
     }
 

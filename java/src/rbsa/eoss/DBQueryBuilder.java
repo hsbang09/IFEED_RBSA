@@ -172,11 +172,12 @@ public class DBQueryBuilder {
         String maxval="";
         double min = 9999999;
         double max = -9999999;
+        
         while(iter.hasNext()){
             org.bson.Document doc = (Document) iter.next();
             
-            if(doc.get(slotName).getClass().toString().contains("Integer")){
-                System.out.println("Integer value found at: " + collectionName + "-" + slotName);
+            if(doc.get(slotName)==null){
+                continue;
             }
             
             double val = (double) doc.get(slotName);
@@ -187,6 +188,7 @@ public class DBQueryBuilder {
                 min = val;
             }
         }
+                
         minval = Double.toString(min);
         maxval = Double.toString(max);
         String[] min_max_class = new String[2];

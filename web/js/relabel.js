@@ -39,12 +39,32 @@ function Index2DisplayName(index, type){
 
 function ActualName2Index(name, type){
     var name=name.trim();
-    if(type=="orbit"){
-        return $.inArray(name,orbitList);
-    }else if(type=="instrument"){
-        return $.inArray(name,instrList);
+    
+    if(name.indexOf(",")!=-1){
+        var names = name.split(",");
+        var newName = "";
+        for(var i=0;i<names.length;i++){
+            var comma = ",";
+            if(i==0){
+                comma = "";
+            }
+            if(type=="orbit"){
+                newName = newName + comma + $.inArray(names[i],orbitList);
+            }else if(type=="instrument"){
+                newName = newName + comma + $.inArray(names[i],instrList);
+            }else{
+                newName = newName + comma + "Naming Error";
+            }              
+        }
+        return newName;
     }else{
-        return "Naming Error";
+        if(type=="orbit"){
+            return $.inArray(name,orbitList);
+        }else if(type=="instrument"){
+            return $.inArray(name,instrList);
+        }else{
+            return "Naming Error";
+        }        
     }
 }
 

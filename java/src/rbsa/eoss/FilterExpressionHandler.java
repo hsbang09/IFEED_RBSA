@@ -107,7 +107,6 @@ public class FilterExpressionHandler {
             }
         }else{
            
-            System.out.println(exp);
         // Examples of feature expressions
         // Variable in String: "{collectionName:gt[0],slotName:String}"
         // Variable in String: "{collectionName:gt[0],slotName:'String'}"
@@ -218,6 +217,8 @@ public class FilterExpressionHandler {
                 if(collectionCondition.equals("all")){
                     // The number of filtered instances should match the number of total instances
                     pass=FactCounter.get(uniqueArchID)==Collections.frequency(allArchIDList,uniqueArchID);
+                }else if(collectionCondition.equals("allBut1")){
+                    pass=FactCounter.get(uniqueArchID)==Collections.frequency(allArchIDList,uniqueArchID)-1;
                 }else{
                     pass = compare_number(FactCounter.get(uniqueArchID),inequalitySign,Integer.parseInt(collectionNumber));
                 }

@@ -148,6 +148,18 @@ function append_df_threshold_setup(){
             .attr("class","df_threshold_setup_input")  
             .attr("type","text")
             .attr('value','1');        
+    
+    var input3 = d3.select("#df_threshold_setup_div")
+            .append("div")
+            .attr("id",'df_threshold_setup_4')
+            .attr('class','df_threshold_setup');
+    input3.append('div')
+            .text('Number of discretized intervals: ');
+    input3.append("input")
+            .attr("class","df_threshold_setup_input")  
+            .attr("type","text")
+            .attr('value','3');      
+    
 }
 
 
@@ -251,9 +263,11 @@ function runDataMining(scope) {
     support_threshold = d3.select('#df_threshold_setup_1').select('.df_threshold_setup_input')[0][0].value;
     confidence_threshold = d3.select('#df_threshold_setup_2').select('.df_threshold_setup_input')[0][0].value;
     lift_threshold = d3.select('#df_threshold_setup_3').select('.df_threshold_setup_input')[0][0].value;
+    var numIntervals = d3.select('#df_threshold_setup_4').select('.df_threshold_setup_input')[0][0].value;
+
 
     sortedDFs = generateDrivingFeatures(scope,selectedBitStrings,nonSelectedBitStrings,
-                            userdef_features,
+                            userdef_features,numIntervals,
                             support_threshold,confidence_threshold,lift_threshold,"lift");
     display_drivingFeatures(sortedDFs,"lift");
 
@@ -275,7 +289,7 @@ function runDataMining(scope) {
 
 
 function generateDrivingFeatures(scope,selected,nonSelected,
-                userdef_features,
+                userdef_features,numIntervals,
 		support_threshold,confidence_threshold,lift_threshold,
 		sortBy){
 
@@ -286,7 +300,7 @@ function generateDrivingFeatures(scope,selected,nonSelected,
         type: "POST",
         data: {ID: "generateDrivingFeatures",selected: JSON.stringify(selected),nonSelected:JSON.stringify(nonSelected),
         	scope:scope,
-                userDefFeatures:JSON.stringify(userdef_features),
+                userDefFeatures:JSON.stringify(userdef_features), numIntervals:numIntervals,
                 supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,
         	sortBy:sortBy},
         async: false,
@@ -464,11 +478,11 @@ function display_drivingFeatures(source,sortby) {
             .attr('class','df_action_button')
             .text('Remove selected features')
             .style('background-color','#FF9393');
-    infoBox.append('button')
-            .attr('id','df_action_button_mrmr')
-            .attr('class','df_action_button')
-            .text('Run feature selection')
-            .on('click',config_df_feature_selection);
+//    infoBox.append('button')
+//            .attr('id','df_action_button_mrmr')
+//            .attr('class','df_action_button')
+//            .text('Run feature selection')
+//            .on('click',config_df_feature_selection);
     infoBox.append('button')
             .attr('id','df_action_button_dm_config')
             .attr('class','df_action_button')
@@ -787,7 +801,8 @@ function display_drivingFeatures(source,sortby) {
                                     });
                                     
                     var fo_div = fo.append('xhtml:div')
-                                    .attr('class','fo_tooltip');
+                                    .attr('class','fo_tooltip')
+                                    .style('width',tooltip_width);
                     var textdiv = fo_div.selectAll("div")
                             .data([{name:expression,supp:supp,conf:conf,conf2:conf2,lift:lift,preset:preset}])
                             .enter()
@@ -795,11 +810,20 @@ function display_drivingFeatures(source,sortby) {
                             .style("padding","13px");
 //                    
                     textdiv.html(function(d){
-                        var output= "" + ppdf(d.name,d.preset) + "<br><br> The % of designs in the intersection out of all designs: " + round_num_2_perc(d.supp) + 
-                        "% <br> The % of selected designs among designs with the feature: " + round_num_2_perc(d.conf) + 
-                        "%<br> The % of designs with the feature among selected designs: " + round_num_2_perc(d.conf2) +"%";
+                        var output= "" + ppdf(d.name,d.preset) + "<br><br> Lift: " + round_num_2_dec(d.lift) + 
+                        "<br> Support: " + round_num_2_dec(d.supp) + 
+                        "<br> Confidence (Feature->Selection): " + round_num_2_dec(d.conf) + 
+                        "<br> Confidence (Selection->Feature): " + round_num_2_dec(d.conf2) +"";
                         return output;
-                    }).style("color", "#F7FF55");                         
+                    })
+//                    textdiv.html(function(d){
+//                        var output= "" + ppdf(d.name,d.preset) + "<br><br> The % of designs in the intersection out of all designs: " + round_num_2_perc(d.supp) + 
+//                        "% <br> The % of selected designs among designs with the feature: " + round_num_2_perc(d.conf) + 
+//                        "%<br> The % of designs with the feature among selected designs: " + round_num_2_perc(d.conf2) +"%";
+//                        return output;
+//                    })
+                    .style("color", "#F7FF55")
+                    .style("word-wrap","break-word");                         
 
                     draw_venn_diagram(df_explanation_box,supp,conf,conf2);
 
