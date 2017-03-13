@@ -398,11 +398,7 @@ function sortDrivingFeatures(drivingFeatures,sortBy){
 
 
                
-var xScale_df;
-var yScale_df;
-var xAxis_df;
-var yAxis_df;
-var dfbar_width;
+
           
 function display_drivingFeatures(source,sortby) {
 

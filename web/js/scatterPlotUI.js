@@ -401,7 +401,6 @@ function dot_click(d) {
 function scatterPlot_option(selected_option){ // three options: zoom, drag_selection, drag_deselection
 
     if (selected_option=="1"){
-
     	
         translate_tmp_local[0] = translate_tmp[0];
         translate_tmp_local[1] = translate_tmp[1];
@@ -419,7 +418,7 @@ function scatterPlot_option(selected_option){ // three options: zoom, drag_selec
                 d3.behavior.zoom()
                         .x(xScale)
                         .y(yScale)
-                        .scaleExtent([0.4, 20])
+                        .scaleExtent([0.2, 25])
                         .on("zoom", function (d) {
 
                             var svg = d3.select("[id=scatterPlotFigure]")
@@ -736,102 +735,6 @@ function unhighlight_basic_info_box(){
 
 
 
-var cars;
-function getDrivingFeatures_automated(){
-	
-    cancelDotSelections();
-    var selectedArchs = d3.selectAll("[class=dot]");
-    var nonSelectedArchs = d3.selectAll("[class=dot]");
-
-    var minCost = 0;
-    var maxCost = 5000;
-    var minScience = 0.15;
-    var maxScience = 1;
-
-    nonSelectedArchs = nonSelectedArchs.filter(function (d) {
-
-        var sci = d.science;
-        var cost = d.cost;
-
-        if (sci < minScience) {
-            return true;
-        } else if (sci > maxScience) {
-            return true;
-        } else if (cost < minCost) {
-            return true;
-        } else if (cost > maxCost) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-
-    selectedArchs = selectedArchs.filter(function (d) {
-
-        var sci = d.science;
-        var cost = d.cost;
-
-        if (sci < minScience) {
-            return false;
-        } else if (sci > maxScience) {
-            return false;
-        } else if (cost < minCost) {
-            return false;
-        } else if (cost > maxCost) {
-            return false;
-        } else {
-            return true;
-        }
-    });
-//    d3.select("[id=numOfSelectedArchs_inputBox]").attr("value",numOfSelectedArchs());
-    
-    var support_threshold = d3.select("[id=support_threshold_input]")[0][0].value;
-    var confidence_threshold = d3.select("[id=confidence_threshold_input]")[0][0].value;
-    var lift_threshold = d3.select("[id=lift_threshold_input]")[0][0].value;
-
-
-    var numOfSelectedArchs = selectedArchs.size();
-    var numOfNonSelectedArchs = nonSelectedArchs.size();
-    
-    
-    buttonClickCount_drivingFeatures += 1;
-    getDrivingFeatures_numOfArchs.push({numOfSelectedArchs,numOfNonSelectedArchs});
-    getDrivingFeatures_thresholds.push({supp:support_threshold,lift:lift_threshold,conf:confidence_threshold});
-    
-    
-    var selectedBitStrings = [];
-    var nonSelectedBitStrings = [];
-    selectedBitStrings.length = 0;
-    nonSelectedBitStrings.length=0;
-
-    for (var i = 0; i < numOfSelectedArchs; i++) {
-        var tmpBitString = booleanArray2String(selectedArchs[0][i].__data__.bitString);
-        selectedBitStrings.push(tmpBitString);
-    }
-    for (var i = 0; i < numOfNonSelectedArchs; i++) {
-        var tmpBitString = booleanArray2String(nonSelectedArchs[0][i].__data__.bitString);
-        nonSelectedBitStrings.push(tmpBitString);
-    }
-
-    $.ajax({
-        url: "DrivingFeatureServlet",
-        type: "POST",
-        data: {ID: "automaticFeatureGeneration",selected: JSON.stringify(selectedBitStrings),nonSelected:JSON.stringify(nonSelectedBitStrings),
-        	supp:support_threshold,conf:confidence_threshold,lift:lift_threshold,
-        	sortBy:"confave"},
-        async: false,
-        success: function (data, textStatus, jqXHR)
-        {
-//        	console.log(data);
-        	sortedDFs = JSON.parse(data);
-        },
-        error: function (jqXHR, textStatus, errorThrown)
-        {alert("error");}
-    });
-
-    display_drivingFeatures(sortedDFs,"confave");
-}
-
 
 
 
@@ -907,9 +810,7 @@ function set_selection_option(selected_option){
 }
 
 
-function round_num_2_perc(num){
-	return Math.round((num + 0.01) * 100);
-}
+
 function round_num_2_dec(num){
 	return +num.toFixed(3);
 }
