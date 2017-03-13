@@ -31,6 +31,7 @@ import jess.ValueVector;
 import rbsa.eoss.local.Params;
 import rbsa.eoss.JessRuleAnalyzer;
 import rbsa.eoss.DBQueryBuilder;
+import rbsa.eoss.Result;
 
 
 
@@ -269,24 +270,16 @@ public class ResultsServlet extends HttpServlet {
         
         
         
-        
-        
-        
-        
-        
-        
-        else if (requestID.equalsIgnoreCase("evalNewArch")){
-            String bitString = request.getParameter("bitString");
+        else if (requestID.equalsIgnoreCase("evaluateArch")){
+            String booleanString = request.getParameter("bitString");         
+            ArchWebInterface ai = ArchWebInterface.getInstance();
+            ai.initialize();
+            Result resu = ai.evaluateArch(booleanString, 1);
+            boolean[] bitString = resu.getArch().getBitString();
             
-//            ai = ArchWebInterface.getInstance();
-//            ai.initialize();
-//            Result resu = ai.evaluateArch(bitString, 1);
-//            this.results.add(resu);
-//            archEvalResults aer = new archEvalResults(resu.getScience(), resu.getCost(), resu.getArch().getBitString());
-//            aer.setStatus("justAdded");
-//            String jsonObj = gson.toJson(aer);
-//            outputString = jsonObj;
-
+            Architecture arch = new Architecture(-1,resu.getScience(),resu.getCost(),boolArray2String(bitString));
+            String jsonObj = gson.toJson(arch);
+            outputString = jsonObj;
         }
         
         
@@ -548,6 +541,24 @@ public class ResultsServlet extends HttpServlet {
         }
         return mat;
     }
+    
+    public String boolArray2String(boolean[] bool){
+        int norb = Params.orbit_list.length;
+        int ninstr = Params.instrument_list.length;
+        String a = "";
+        int cnt=0;
+        for(int i=0;i<norb;i++){
+            for(int j=0;j<ninstr;j++){
+                if(bool[cnt]==true){
+                    a=a+"1";
+                }else{
+                    a=a+"0";
+                }
+                cnt++;
+            }
+        }
+        return a;
+    }    
     
     public boolean compareTwoBitStrings(String b1, boolean[] b2){
         for(int i=0;i<b2.length;i++){

@@ -74,49 +74,47 @@ public class GenericTask implements Callable {
     
         getResource();
         Rete r = res.getRete();
-//        Rete r2 = res.getRete2();
         QueryBuilder qb = res.getQueryBuilder();
-//        QueryBuilder qb2 = res.getQueryBuilder2();
         MatlabFunctions m = res.getM();
         Result resu = new Result();
         try{
             if (type.equalsIgnoreCase("Fast")) {
-//                resu = evaluatePerformanceFast(r, arch,qb, m);
-//                r2.eval("(reset)");
-//                assertMissions(r2,arch,m); 
+                resu = evaluatePerformanceFast(r, arch,qb, m);
+                r.eval("(reset)");
+                assertMissions(r,arch,m); 
             } else if (type.equalsIgnoreCase("Capabilities")) {
-//                resu = evaluateCapabilities(r, arch, qb, m);
-//                r2.eval("(reset)");
-//                assertMissions(r2,arch,m); 
+                resu = evaluateCapabilities(r, arch, qb, m);
+                r.eval("(reset)");
+                assertMissions(r,arch,m); 
             } else if (type.equalsIgnoreCase("Slow")) {
                 resu = evaluatePerformance(r, arch, qb, m);
-//                r.eval("(reset)");
-//                assertMissions(r,arch,m); 
+                r.eval("(reset)");
+                assertMissions(r,arch,m); 
             } else if (type.equalsIgnoreCase("NoSynergies")) {
-//                resu = evaluateNoSynergies(r, arch, qb, m);
-//                r2.eval("(reset)");
-//                assertMissionsNoSynergies(r2,arch,m);
+                resu = evaluateNoSynergies(r, arch, qb, m);
+                r.eval("(reset)");
+                assertMissionsNoSynergies(r,arch,m);
                 
             } else {
                 throw new Exception("Wrong type of task");
             }
-//            evaluateCost(r, arch, resu, qb, m);
+            evaluateCost(r, arch, resu, qb, m);
             resu.setTaskType(type);
             arch.setResult(resu);
             
-            //System.out.println("Arch " + arch.toBitString() + " nsats = " + arch.getNsats() + " " + resu.getTaskType() + ": Science = " + resu.getScience() + "; Cost = " + resu.getCost());
+            System.out.println("Arch " + arch.toBitString() + " nsats = " + arch.getNsats() + " " + resu.getTaskType() + ": Science = " + resu.getScience() + "; Cost = " + resu.getCost());
         } catch (Exception e) {
             System.out.println( "EXC in Task:call: " + e.getClass() + " " + e.getMessage() + " " + e.getStackTrace() );
             freeResource();
         }       
         freeResource();
         
-        if (saveRete==true){
-            resu.setRete(r);
-//            resu.setRete2(r2);
-            resu.setQueryBuilder(qb);
-//            resu.setQueryBuilder2(qb2);
-        }
+//        if (saveRete==true){
+//            resu.setRete(r);
+////            resu.setRete2(r2);
+//            resu.setQueryBuilder(qb);
+////            resu.setQueryBuilder2(qb2);
+//        }
         
         return resu;
     }

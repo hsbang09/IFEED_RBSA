@@ -66,7 +66,7 @@ public class ArchWebInterface {
     }
 
     public Result evaluateArch(String bitString,int nSats){
-        AE.setSaveRete();
+        //AE.setSaveRete();
         Architecture arch = new Architecture(bitString, nSats);
         resu = AE.evaluateArchitecture(arch, "Slow");
         return resu;

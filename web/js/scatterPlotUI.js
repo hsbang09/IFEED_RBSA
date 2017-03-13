@@ -915,3 +915,51 @@ function round_num_2_dec(num){
 }
 
 
+
+
+
+
+function eval_new_arch(arch_desc){
+	
+	var orbit_desc = arch_desc.split(';');
+	var indices = [];
+	for(var i=0;i<orbit_desc.length;i++){
+		for(var j=0;j<orbit_desc[i].length;j++){
+			var index = DisplayName2Index(orbit_desc[i][j],'instrument');
+			indices.push(index + i*ninstr);
+		}
+	}
+	var bitString = '';
+	for(var i=0;i<norb;i++){
+		for(var j=0;j<ninstr;j++){
+			if(indices.indexOf(i*ninstr+j)!=-1){
+				bitString = bitString + '1';
+			}else{
+				bitString = bitString + '0';
+			}
+		}
+	}
+	
+    $.ajax(
+            {
+                url: "ResultsServlet",
+                type: "POST", 
+                data: {ID: "evaluateArch", 
+                	bitString:bitString},
+                async: false,
+                success: function (data, textStatus, jqXHR)
+                {
+                	console.log(JSON.parse(data));
+                	//architectures.push(JSON.parse(data));
+                },
+                complete: function () {
+//                	reset_drawing_scatterPlot();
+//                	draw_scatterPlot(architectures);                                 
+                },
+                error: function (jqXHR, textStatus, errorThrown)
+                {
+                    alert("error");
+                }
+            }
+	);
+}
