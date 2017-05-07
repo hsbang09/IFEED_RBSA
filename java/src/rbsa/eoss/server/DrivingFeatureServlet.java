@@ -17,8 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 
-import rbsa.eoss.DrivingFeature;
-import rbsa.eoss.DrivingFeaturesGenerator;
+import rbsa.eoss.dm.DrivingFeature;
+import rbsa.eoss.dm.DrivingFeaturesGenerator;
 import rbsa.eoss.ResultManager;
 import rbsa.eoss.Scheme;
 import rbsa.eoss.local.Params;
@@ -139,11 +139,18 @@ public class DrivingFeatureServlet extends HttpServlet {
             ArrayList<Integer> behavioral = new ArrayList<>();
             ArrayList<Integer> non_behavioral = new ArrayList<>();
 
+            
             for (String selectedArchs_split1:selectedArchs_split) {
-                behavioral.add(Integer.parseInt(selectedArchs_split1));
+                int tmp = Integer.parseInt(selectedArchs_split1);
+                if(!behavioral.contains(tmp)){
+                    behavioral.add(tmp);
+                }
             }
             for (String non_selectedArchs_split1:nonSelectedArchs_split) {
-                non_behavioral.add(Integer.parseInt(non_selectedArchs_split1));
+                int tmp = Integer.parseInt(non_selectedArchs_split1);
+                if(!non_behavioral.contains(tmp) && !behavioral.contains(tmp)){
+                    non_behavioral.add(tmp);
+                }
             }
             
             String scope = request.getParameter("scope");
@@ -151,31 +158,29 @@ public class DrivingFeatureServlet extends HttpServlet {
             dfsGen = new DrivingFeaturesGenerator(dbq);
             dfsGen.initialize(scope, behavioral, non_behavioral, support_threshold,confidence_threshold,lift_threshold, numIntervals);
             
-            String userdef_features = request.getParameter("userDefFeatures");
-                        
-            String[] userdef_features_split = {};
-            if(!userdef_features.isEmpty()){
-                if(userdef_features.startsWith("[") && userdef_features.endsWith("]")){
-                    userdef_features = userdef_features.substring(1,userdef_features.length()-1);
-                }
-                if(userdef_features.startsWith("\"") && userdef_features.endsWith("\"")){
-                    userdef_features = userdef_features.substring(1,userdef_features.length()-1);
-                }
-                userdef_features_split= userdef_features.split("\",\"");
-            }
+//            String userdef_features = request.getParameter("userDefFeatures");
+//                        
+//            String[] userdef_features_split = {};
+//            if(!userdef_features.isEmpty()){
+//                if(userdef_features.startsWith("[") && userdef_features.endsWith("]")){
+//                    userdef_features = userdef_features.substring(1,userdef_features.length()-1);
+//                }
+//                if(userdef_features.startsWith("\"") && userdef_features.endsWith("\"")){
+//                    userdef_features = userdef_features.substring(1,userdef_features.length()-1);
+//                }
+//                userdef_features_split= userdef_features.split("\",\"");
+//            }
 
 
-            dfsGen.setUserDefFeatures(userdef_features_split);
-            DFs = dfsGen.getDrivingFeatures();
+//            dfsGen.setUserDefFeatures(userdef_features_split);
+
+            dfsGen.getPrimitiveDrivingFeatures();
+            DFs = (ArrayList) dfsGen.getDrivingFeatures();
             
             if(DFs.isEmpty()){
                 outputString="";
-            }
-            else{
-                String sortingCriteria = request.getParameter("sortBy");
-                System.out.println("Number of driving features found:"  + DFs.size());
-                ArrayList<DrivingFeature> sorted = this.sort(DFs, sortingCriteria);
-                String jsonObj = gson.toJson(sorted);
+            }else{
+                String jsonObj = gson.toJson(DFs);
                 outputString = jsonObj;
             }
             
@@ -185,87 +190,7 @@ public class DrivingFeatureServlet extends HttpServlet {
                         
             
         } 
-        
-        else if(requestID.equalsIgnoreCase("runFeatureSelection")){
 
-            String removed_features = request.getParameter("removedFeatures");
-            String[] removed_features_split = removed_features.substring(1, removed_features.length()-1).split(",");
-            int[] removed_features_id = new int[removed_features_split.length];
-            for(int i=0;i<removed_features_split.length;i++){
-                if(removed_features_split[i].isEmpty()){
-                    continue;
-                }
-                removed_features_id[i]=Integer.parseInt(removed_features_split[i]);
-            }            
-            
-            int numFeatures = Integer.parseInt(request.getParameter("numFeatures"));           
-
-            dfsGen.setRemovedFeatures(removed_features_id);
-            ArrayList<DrivingFeature> dfs = dfsGen.runFeatureSelection(numFeatures);                    
-            
-            if(dfs.isEmpty()){
-                outputString="";
-            }
-            else{
-                String sortingCriteria = request.getParameter("sortBy");
-                System.out.println("Number of driving features found:"  + dfs.size());
-                ArrayList<DrivingFeature> sorted = this.sort(dfs, sortingCriteria);
-                String jsonObj = gson.toJson(sorted);
-                outputString = jsonObj;
-            }                  
-
-            long t1 = System.currentTimeMillis();
-            System.out.println( "Feature selection done in: " + String.valueOf(t1-t0) + " msec");            
-        }
-        
-        
-        
-        else if (requestID.equalsIgnoreCase("generateHigherOrderDrivingFeautres")){
-                        
-            String removed_features = request.getParameter("removedFeatures");
-            String[] removed_features_split = removed_features.substring(1, removed_features.length()-1).split(",");
-            int[] removed_features_id = new int[removed_features_split.length];
-            for(int i=0;i<removed_features_split.length;i++){
-                if(removed_features_split[i].isEmpty()){
-                    continue;
-                }
-                removed_features_id[i]=Integer.parseInt(removed_features_split[i]);
-            }
-            
-            double supp = Double.parseDouble(request.getParameter("supp"));
-            double conf = Double.parseDouble(request.getParameter("conf"));
-            double lift = Double.parseDouble(request.getParameter("lift"));             
-            
-            //int level = Integer.parseInt(request.getParameter("maxLevel"));             
-            
-            dfsGen.setRemovedFeatures(removed_features_id);
-            ArrayList<DrivingFeature> dfs = dfsGen.getHigherOrderDrivingFeautures(supp,conf,lift);                    
-            
-            if(dfs.isEmpty()){
-                outputString="";
-            }
-            else{
-                String sortingCriteria = request.getParameter("sortBy");
-                System.out.println("Number of driving features found:"  + dfs.size());
-                ArrayList<DrivingFeature> sorted = this.sort(dfs, sortingCriteria);
-                String jsonObj = gson.toJson(sorted);
-                outputString = jsonObj;
-            }                    
-
-            long t1 = System.currentTimeMillis();
-            System.out.println( "Data mining done in: " + String.valueOf(t1-t0) + " msec");
-        }
-        
-        
-        
-        
-        
-        
-        
-        else if (requestID.equalsIgnoreCase("buildClassificationTree")){
-//        	String graph = dfsGen.buildTree(false);
-//        	outputString = graph;
-        }
 
         else if(requestID.equalsIgnoreCase("applyFilter")){
             String filterExpression_raw = request.getParameter("filterExpression");
@@ -304,78 +229,7 @@ public class DrivingFeatureServlet extends HttpServlet {
     }
     
     
-    public ArrayList<DrivingFeature> sort(ArrayList<DrivingFeature> dfs, String sortingCriteria){
-        
-        ArrayList<DrivingFeature> sortedDFs;
-        sortedDFs = new ArrayList<>();
 
-        for (DrivingFeature df:dfs){
-
-            double value = 0.0;
-            double maxVal = 1000000.0;
-            double minVal = -1.0;
-
-            if (sortedDFs.isEmpty()){
-                sortedDFs.add(df);
-                continue;
-            } 
-            if(sortingCriteria.equalsIgnoreCase("lift")){
-                value = df.getMetrics()[1];
-                maxVal = sortedDFs.get(0).getMetrics()[1];
-                minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[1];
-            } else if(sortingCriteria.equalsIgnoreCase("supp")){
-                value = df.getMetrics()[0];
-                maxVal = sortedDFs.get(0).getMetrics()[0];
-                minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[0];
-            } else if(sortingCriteria.equalsIgnoreCase("confave")){
-                value = (double) (df.getMetrics()[2] + df.getMetrics()[3])/2;
-                maxVal = (double) (sortedDFs.get(0).getMetrics()[2] + sortedDFs.get(0).getMetrics()[3])/2;
-                minVal = (double) (sortedDFs.get(sortedDFs.size()-1).getMetrics()[2] + sortedDFs.get(sortedDFs.size()-1).getMetrics()[3])/2;
-            } else if(sortingCriteria.equalsIgnoreCase("conf1")){
-                value = df.getMetrics()[2];
-                maxVal = sortedDFs.get(0).getMetrics()[2];
-                minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[2];
-            } else if(sortingCriteria.equalsIgnoreCase("conf2")){
-                value = df.getMetrics()[3];
-                maxVal = sortedDFs.get(0).getMetrics()[3];
-                minVal = sortedDFs.get(sortedDFs.size()-1).getMetrics()[3];
-            }
-
-            if (value >= maxVal){
-                sortedDFs.add(0,df);
-            } else if(value <= minVal){
-                sortedDFs.add(df);
-            } else {
-                    for (int j=0;j<sortedDFs.size();j++){
-
-                        double refval = 0.0;
-                        double refval2 = 0.0;
-                        if(sortingCriteria.equalsIgnoreCase("lift")){
-                            refval = sortedDFs.get(j).getMetrics()[1];
-                            refval2 = sortedDFs.get(j+1).getMetrics()[1];
-                        } else if(sortingCriteria.equalsIgnoreCase("supp")){
-                            refval = sortedDFs.get(j).getMetrics()[0];
-                            refval2 = sortedDFs.get(j+1).getMetrics()[0];
-                        } else if(sortingCriteria.equalsIgnoreCase("confave")){
-                            refval = (double) (sortedDFs.get(j).getMetrics()[2] + sortedDFs.get(j).getMetrics()[3])/2;
-                            refval2 = (double) (sortedDFs.get(j+1).getMetrics()[2] + sortedDFs.get(j+1).getMetrics()[3])/2;
-                        } else if(sortingCriteria.equalsIgnoreCase("conf1")){
-                            refval = sortedDFs.get(j).getMetrics()[2];
-                            refval2 = sortedDFs.get(j+1).getMetrics()[2];
-                        } else if(sortingCriteria.equalsIgnoreCase("conf2")){
-                            refval = sortedDFs.get(j).getMetrics()[3];
-                            refval2 = sortedDFs.get(j+1).getMetrics()[3];
-                        }
-
-                        if(value <= refval && value > refval2){
-                            sortedDFs.add(j+1,df);
-                            break;
-                        }
-                    } 
-            }
-        }    
-        return sortedDFs;
-    }
     
     
     public int[][] bitString2IntMat(String bitString){

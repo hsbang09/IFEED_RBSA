@@ -285,14 +285,10 @@ function runDataMining(scope) {
 
 
 
-
-
-
 function generateDrivingFeatures(scope,selected,nonSelected,
                 userdef_features,numIntervals,
 		support_threshold,confidence_threshold,lift_threshold,
 		sortBy){
-
         
     var output;
     $.ajax({
